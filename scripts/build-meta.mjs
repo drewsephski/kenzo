@@ -17,30 +17,38 @@ const resolveSha = () => {
 const buildSha = resolveSha()
 const buildTime = process.env.BUILD_TIME?.trim() || new Date().toISOString()
 
-// Build shared first (other packages depend on its types)
 const sharedResult = spawnSync('bun', ['run', '--filter', '@flux/shared', 'build'], {
   stdio: 'inherit',
   env: { ...process.env, BUILD_SHA: buildSha, BUILD_TIME: buildTime },
 })
 
-if (sharedResult.status !== 0) {
-  process.exit(sharedResult.status ?? 1)
-}
-
-// Then build everything else
-const result = spawnSync(
-  'bun',
-  ['run', '--filter', '!@flux/shared', 'build', ...process.argv.slice(2)],
-  {
+const webResult = sharedResult.status === 0
+  ? spawnSync('bun', ['run', '--filter', '@flux/web', 'build'], {
     stdio: 'inherit',
     env: {
       ...process.env,
       BUILD_SHA: buildSha,
       BUILD_TIME: buildTime,
     },
-  }
-)
+  })
+  : sharedResult
 
-if (result.status !== 0) {
-  process.exit(result.status ?? 1)
+if (webResult.status !== 0) {
+  process.exit(webResult.status ?? 1)
+}
+
+for (const workspace of ['@flux/server', '@flux/mcp', 'kenzoboard']) {
+  const result = spawnSync('bun', ['run', '--filter', workspace, 'build', ...process.argv.slice(2)], {
+    stdio: 'inherit',
+    env: {
+      ...process.env,
+      BUILD_SHA: buildSha,
+      BUILD_TIME: buildTime,
+      KENZO_WEB_BUILT: '1',
+    },
+  })
+
+  if (result.status !== 0) {
+    process.exit(result.status ?? 1)
+  }
 }

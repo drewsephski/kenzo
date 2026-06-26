@@ -5,6 +5,7 @@ This runs Kenzo from source while keeping the underlying package names as `@flux
 ## Prerequisites
 
 - [Bun](https://bun.sh/) 1.1+
+- Node.js 20+
 
 ## Setup
 
@@ -35,18 +36,18 @@ Kenzo's web UI will be at http://localhost:5173. The API runs on :3000 by defaul
 
 ## CLI
 
-The Kenzo CLI (`kenzoboard`) provides full task management from the terminal, powered by the Flux engine.
+The Kenzo CLI (`kenzoboard`) provides full task management from the terminal, powered by the Flux engine. The published CLI runs on Node; Bun is only needed for source development and advanced SQLite-backed workflows.
 
 ```bash
 # Install from npm (recommended)
 npx kenzoboard
 npm install -g kenzoboard
 
-# Or build and link from source
+# Or build and link from source; this packages the web app into packages/cli/dist/web
 cd packages/cli && bun run build && bun link
 
 # Or run directly
-bun packages/cli/src/index.ts help
+node packages/cli/dist/index.js help
 ```
 
 See [cli.md](./cli.md) for full CLI documentation.
@@ -59,8 +60,8 @@ Add to Claude Desktop (`~/Library/Application Support/Claude/claude_desktop_conf
 {
   "mcpServers": {
     "flux": {
-      "command": "bun",
-      "args": ["/path/to/flux/packages/mcp/dist/index.js"]
+      "command": "npx",
+      "args": ["-y", "--package", "kenzoboard", "kenzoboard-mcp"]
     }
   }
 }
@@ -70,10 +71,10 @@ For Claude Code:
 
 ```bash
 # Claude Code
-claude mcp add flux -- bun /path/to/flux/packages/mcp/dist/index.js
+claude mcp add flux -- npx -y --package kenzoboard kenzoboard-mcp
 
 # Codex
-codex mcp add flux -- bun /path/to/flux/packages/mcp/dist/index.js
+codex mcp add flux -- npx -y --package kenzoboard kenzoboard-mcp
 ```
 
 For ChatGPT setup and best practices, see `docs/assistant-setup.md`.

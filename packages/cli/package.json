@@ -5,10 +5,12 @@
   "type": "module",
   "bin": {
     "kenzoboard": "dist/index.js",
-    "flux": "dist/index.js"
+    "flux": "dist/index.js",
+    "kenzoboard-mcp": "dist/mcp.js",
+    "flux-mcp": "dist/mcp.js"
   },
   "scripts": {
-    "build": "bun build src/index.ts --outdir dist --target node",
+    "build": "node ../../scripts/build-cli.mjs",
     "dev": "bun run src/index.ts"
   },
   "repository": {

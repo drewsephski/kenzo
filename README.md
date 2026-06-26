@@ -1,4 +1,4 @@
-# Kenzo &middot; powered by the Flux engine &middot; [![CI](https://github.com/sirsjg/flux/actions/workflows/ci.yml/badge.svg)](https://github.com/sirsjg/flux/actions/workflows/ci.yml) [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) ![TypeScript](https://img.shields.io/badge/TypeScript-3178c6?style=flat&logo=typescript&logoColor=white) ![Preact](https://img.shields.io/badge/Preact-673ab8?style=flat&logo=preact&logoColor=white) ![Bun](https://img.shields.io/badge/Bun-fbf0df?style=flat&logo=bun&logoColor=black) ![Docker](https://img.shields.io/badge/Docker-2496ed?style=flat&logo=docker&logoColor=white) ![MCP](https://img.shields.io/badge/MCP-enabled-f59e0b?style=flat)
+# Kenzo &middot; powered by the Flux engine &middot; [![CI](https://github.com/drewsephski/kenzo/actions/workflows/ci.yml/badge.svg)](https://github.com/drewsephski/kenzo/actions/workflows/ci.yml) [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) ![TypeScript](https://img.shields.io/badge/TypeScript-3178c6?style=flat&logo=typescript&logoColor=white) ![Preact](https://img.shields.io/badge/Preact-673ab8?style=flat&logo=preact&logoColor=white) ![MCP](https://img.shields.io/badge/MCP-enabled-f59e0b?style=flat)
 
 > Kenzo is the local-first board for human-led AI work. Flux is the engine that powers the CLI, MCP, sync, storage, and APIs.
 
@@ -8,7 +8,7 @@
 
 Kenzo gives teams and agents one visible operating layer for projects, epics, tasks, blockers, and handoffs. The Flux engine underneath keeps the system open and hackable: local-first storage, CLI control, MCP access, REST APIs, webhooks, and git-native sync.
 
-Use the Kenzo web UI when you want a board humans can scan. Use `kenzoboard` for the primary CLI and local app experience. Advanced users can still use the compatible `flux` command when agents need a precise, scriptable engine interface. Internally, package names remain `@flux/*`.
+Use the Kenzo web UI when you want a board humans can scan. Use `kenzoboard` for the primary CLI and local app experience. Advanced users can still use the compatible `flux` command when agents need a precise, scriptable engine interface. Internally, package names remain `@flux/*` for now.
 
 ![Demo](./docs/demo.gif)
 
@@ -17,10 +17,10 @@ Use the Kenzo web UI when you want a board humans can scan. Use `kenzoboard` for
 Kenzo keeps execution visible without hiding the mechanics that make agent workflows reliable:
 
 - **Shared control surface**: Humans use the web board; agents use MCP, REST, or the CLI against the same data.
-- **Open Flux engine**: Local JSON or SQLite storage, git-native sync, and transparent package internals.
+- **Powered by the Flux engine**: Local JSON storage by default, optional engine-level SQLite/server modes, git-native sync, and transparent package internals.
 - **Execution-ready context**: Priorities, dependencies, comments, blobs, and blockers stay attached to the work.
 
-Kenzo is the product experience. Flux is the engine name you will still see in command names, data directories, package imports, environment variables, and MCP resource identifiers.
+Kenzo is the product experience. Flux remains the engine-level compatibility name for existing data directories, package imports, environment variables, sync branches, and MCP resource identifiers.
 
 <p align="center">
   <img src="./docs/sample-workflow.png" alt="Sample workflow" />
@@ -68,20 +68,16 @@ npx kenzoboard dev
 npx kenzoboard serve
 npx kenzoboard ready
 npx kenzoboard mcp
-
-# Full stack with Web UI (Docker)
-curl -fsSL https://raw.githubusercontent.com/sirsjg/flux/main/scripts/quickstart.sh | bash  # macOS/Linux
-irm https://raw.githubusercontent.com/sirsjg/flux/main/scripts/quickstart.ps1 | iex         # Windows
 ```
 
-`npx kenzoboard` creates or opens a local Kenzo workspace, starts the app, opens [http://localhost:3000](http://localhost:3000), and shows the MCP setup command as the next step. The Docker quickstarts start the Kenzo web UI and MCP server with a shared data volume.
+`npx kenzoboard` creates or opens a local Kenzo workspace in `./.flux`, starts the bundled app, opens [http://localhost:3000](http://localhost:3000), and shows the MCP setup command as the next step. If port 3000 is busy, Kenzo prints the selected fallback port.
 
 ```bash
 # Claude Code
-claude mcp add flux -- docker exec -i flux-web bun packages/mcp/dist/index.js
+claude mcp add flux -- npx -y --package kenzoboard kenzoboard-mcp
 
 # Codex
-codex mcp add flux -- docker exec -i flux-web bun packages/mcp/dist/index.js
+codex mcp add flux -- npx -y --package kenzoboard kenzoboard-mcp
 ```
 
 Let your agent know!
@@ -127,7 +123,7 @@ EOF
 
 Looking for install options, assistant setup, APIs, or webhooks? Start here:
 
-- [`docs/installation-docker.md`](docs/installation-docker.md) - the fastest path to a production-ready Kenzo stack with a shared data volume for instant sync.
+- [`docs/installation-docker.md`](docs/installation-docker.md) - advanced container setup for teams that want a shared server-style deployment.
 - [`docs/installation-source.md`](docs/installation-source.md) - build from source, run locally, and get a dev workflow that feels effortless.
 - [`docs/cli.md`](docs/cli.md) - full CLI reference for terminal-based task management with MCP parity.
 - [`docs/claude-code-plugin.md`](docs/claude-code-plugin.md) - Claude Code plugin that turns your project requirements into a structured Kenzo board with epics, tasks, and dependencies.
@@ -153,7 +149,7 @@ flux push "message"     # Commit and push task changes
 Configure remote server in `.flux/config.json`:
 ```json
 {
-  "server": "https://app.getflux.dev",
+  "server": "https://kenzo.example.com",
   "apiKey": "$FLUX_API_KEY"
 }
 ```

@@ -5,14 +5,14 @@ The Kenzo CLI (`kenzoboard`) provides terminal control for Kenzo boards, with MC
 ## Installation
 
 ```bash
-# npm / npx (recommended)
+# npm / npx (recommended; includes the local web app)
 npx kenzoboard
 npm install -g kenzoboard
 
 # From source
 cd packages/cli && bun run build && bun link
 
-# Docker runs the Kenzo web/API and MCP services
+# Advanced Docker server
 docker run -d -p 3000:3000 -v flux-data:/app/packages/data -e FLUX_DATA=/app/packages/data/flux.sqlite flux-mcp
 ```
 
@@ -26,17 +26,19 @@ kenzoboard init           # Creates .flux/data.json
 kenzoboard project list   # Uses local data
 ```
 
-### SQLite (via FLUX_DATA)
+### SQLite (advanced, via FLUX_DATA)
 ```bash
 FLUX_DATA=.flux/data.sqlite kenzoboard project list
 ```
 
+The published `kenzoboard` npm package runs on Node and defaults to JSON storage. SQLite remains an engine-level mode for Bun/Docker/source deployments.
+
 ### Server/Hosted API
-Connect to any Kenzo/Flux server (local or remote):
+Connect to any Kenzo server powered by the Flux engine (local or remote):
 
 ```bash
 # Connect to hosted Kenzo instance (with API key for writes)
-kenzoboard init --server https://flux.example.com --api-key '$FLUX_API_KEY'
+kenzoboard init --server https://kenzo.example.com --api-key '$FLUX_API_KEY'
 
 # Or local server (no auth needed in dev mode)
 kenzoboard init --server http://localhost:3000
@@ -51,7 +53,7 @@ Server mode stores the URL in `.flux/config.json`. The CLI works identically reg
 Config supports `$ENV_VAR` expansion for secrets:
 ```json
 {
-  "server": "https://flux.example.com",
+  "server": "https://kenzo.example.com",
   "apiKey": "$FLUX_API_KEY"
 }
 ```
@@ -61,7 +63,7 @@ Config supports `$ENV_VAR` expansion for secrets:
 ### Initialization
 
 ```bash
-kenzoboard                  # Create/open local workspace and start app
+kenzoboard                  # Create/open ./.flux and start the bundled app
 kenzoboard init             # Interactive setup (JSON storage)
 kenzoboard init --sqlite    # Use SQLite storage
 kenzoboard init --server URL       # Connect to server
@@ -153,7 +155,7 @@ kenzoboard serve --data path.json # Override with JSON file
 kenzoboard serve --data path.sqlite  # Override with SQLite file
 ```
 
-Reads `.flux/config.json` to determine storage backend. Serves both the web dashboard and REST API.
+Reads `.flux/config.json` to determine storage backend. The npm package serves both the bundled web dashboard and REST API.
 
 ## Flags
 

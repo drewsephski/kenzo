@@ -6,6 +6,7 @@ import { join, dirname, resolve, sep } from 'path';
 import { fileURLToPath } from 'url';
 import { existsSync, readFileSync, statSync } from 'fs';
 import { spawn } from 'child_process';
+import { createServer } from 'net';
 import {
   setStorageAdapter,
   initStore,
@@ -175,8 +176,7 @@ function createApp() {
 // Check if a port is available
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise((resolve) => {
-    const net = require('net');
-    const server = net.createServer();
+    const server = createServer();
     server.once('error', () => resolve(false));
     server.once('listening', () => {
       server.close();
@@ -232,6 +232,8 @@ export async function serveCommand(
 
   // Try to serve static files from web dist
   const webDistPaths = [
+    join(__dirname, 'web'),               // npm package bundle: packages/cli/dist/web
+    join(__dirname, '../web'),            // compiled command file: packages/cli/dist/commands -> packages/cli/dist/web
     join(__dirname, '../../../web/dist'),  // dev: relative to cli/src/commands
     join(__dirname, '../../web/dist'),     // built: relative to cli/dist
     join(process.cwd(), 'packages/web/dist'), // monorepo root

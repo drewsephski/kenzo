@@ -6,11 +6,16 @@ export { createJsonAdapter } from './json-adapter.js';
 // Lazy-loaded SQLite adapter (requires Bun runtime)
 let _createSqliteAdapter: ((filePath: string) => StorageAdapter) | undefined;
 
-try {
-  const mod = await import('./sqlite-adapter.js');
-  _createSqliteAdapter = mod.createSqliteAdapter;
-} catch {
-  // SQLite adapter not available (not running in Bun)
+if ('Bun' in globalThis) {
+  try {
+    const runtimeImport = new Function('specifier', 'return import(specifier)') as (specifier: string) => Promise<{
+      createSqliteAdapter: (filePath: string) => StorageAdapter;
+    }>;
+    const mod = await runtimeImport('./sqlite-adapter.js');
+    _createSqliteAdapter = mod.createSqliteAdapter;
+  } catch {
+    // SQLite adapter not available in this build.
+  }
 }
 
 /**

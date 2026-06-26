@@ -1,6 +1,6 @@
-# Installation (Docker)
+# Installation (Advanced Docker)
 
-Docker is the recommended way to run Kenzo, powered by the Flux engine. Build the image first:
+The default Kenzo install path is `npx kenzoboard`. Docker remains available for advanced server-style deployments where you want a shared volume and a long-running web/API process powered by the Flux engine. Build the image first:
 
 ```bash
 docker build -t flux-mcp .
@@ -68,8 +68,7 @@ Install CLI locally and connect to Docker server:
 
 ```bash
 # Install CLI
-bun add -g kenzoboard
-# or: npm install -g kenzoboard
+npm install -g kenzoboard
 
 # Initialize with Docker server
 cd your-repo

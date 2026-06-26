@@ -4,15 +4,15 @@ Kenzo uses the Flux MCP server as its assistant interface. Tool names, resource 
 
 ## Remote Server Mode
 
-The MCP server can connect to a remote Kenzo/Flux API instead of using local storage:
+The MCP server can connect to a remote Kenzo API powered by the Flux engine instead of using local storage:
 
 ```bash
-FLUX_SERVER=https://flux.example.com FLUX_API_KEY=your-key npx @flux/mcp
+FLUX_SERVER=https://kenzo.example.com FLUX_API_KEY=your-key npx -y --package kenzoboard kenzoboard-mcp
 ```
 
 | Variable | Description |
 |----------|-------------|
-| `FLUX_SERVER` | Remote Kenzo/Flux server URL |
+| `FLUX_SERVER` | Remote Kenzo server URL |
 | `FLUX_API_KEY` | API key for write operations |
 
 ## MCP Tools

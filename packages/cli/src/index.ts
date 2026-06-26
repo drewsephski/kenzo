@@ -1,4 +1,4 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 
 import { resolve, dirname, basename } from 'path';
 import { execSync } from 'child_process';
@@ -71,18 +71,6 @@ function defaultServePort(): number {
   return publicCommandName() === 'flux' ? 3589 : 3000;
 }
 
-function findExistingFluxDirFromCwd(): string | null {
-  let dir = process.cwd();
-  while (dirname(dir) !== dir) {
-    const fluxDir = resolve(dir, '.flux');
-    if (existsSync(fluxDir)) {
-      return fluxDir;
-    }
-    dir = dirname(dir);
-  }
-  return null;
-}
-
 function ensureFluxIgnored(): void {
   const gitRoot = findGitRoot();
   const gitignorePath = gitRoot ? resolve(gitRoot, '.gitignore') : resolve(process.cwd(), '.gitignore');
@@ -96,7 +84,7 @@ function ensureFluxIgnored(): void {
 }
 
 async function ensureKenzoWorkspace(): Promise<{ projectId?: string; projectName?: string }> {
-  const fluxDir = findExistingFluxDirFromCwd() || resolve(process.cwd(), '.flux');
+  const fluxDir = process.env.FLUX_DIR || resolve(process.cwd(), '.flux');
   const configPath = resolve(fluxDir, 'config.json');
   const jsonPath = resolve(fluxDir, 'data.json');
   const sqlitePath = resolve(fluxDir, 'data.sqlite');
@@ -144,23 +132,33 @@ async function ensureKenzoWorkspace(): Promise<{ projectId?: string; projectName
 }
 
 function printMcpSetup(command = publicCommandName()): void {
+  const npxMcpCommand = 'npx -y --package kenzoboard kenzoboard-mcp';
+  const installedMcpCommand = 'kenzoboard-mcp';
   const dockerCommand = 'docker run -i --rm -v "$(pwd)/.flux:/app/packages/data" -e FLUX_DATA=/app/packages/data/flux.sqlite flux-mcp bun packages/mcp/dist/index.js';
   const localMcpPath = resolve(process.cwd(), 'packages/mcp/dist/index.js');
 
   console.log(`${c.bold}Agent setup${c.reset} ${c.dim}(MCP resources remain flux:// for compatibility)${c.reset}\n`);
 
+  console.log(`${c.bold}Codex:${c.reset}`);
   if (existsSync(localMcpPath)) {
-    console.log(`${c.bold}Codex:${c.reset}`);
     console.log(`  codex mcp add flux -- bun ${localMcpPath}`);
-    console.log(`${c.bold}Claude Code:${c.reset}`);
-    console.log(`  claude mcp add flux -- bun ${localMcpPath}`);
   } else {
-    console.log(`${c.bold}Codex:${c.reset}`);
-    console.log(`  codex mcp add flux -- ${dockerCommand}`);
-    console.log(`${c.bold}Claude Code:${c.reset}`);
-    console.log(`  claude mcp add flux -- ${dockerCommand}`);
+    console.log(`  codex mcp add flux -- ${npxMcpCommand}`);
   }
 
+  console.log(`${c.bold}Claude Code:${c.reset}`);
+  if (existsSync(localMcpPath)) {
+    console.log(`  claude mcp add flux -- bun ${localMcpPath}`);
+  } else {
+    console.log(`  claude mcp add flux -- ${npxMcpCommand}`);
+  }
+
+  console.log('');
+  console.log(`${c.bold}Global install:${c.reset}`);
+  console.log(`  ${installedMcpCommand}`);
+  console.log('');
+  console.log(`${c.bold}Advanced Docker:${c.reset}`);
+  console.log(`  ${dockerCommand}`);
   console.log('');
   console.log(`Run ${c.cyan}${command} ready${c.reset} to see agent-ready work.`);
 }
