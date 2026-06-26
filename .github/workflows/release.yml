@@ -45,21 +45,22 @@ jobs:
       - name: Build CLI
         run: bun run build
 
-      - name: Setup Node for npm publish
+      - name: Setup Node for semantic-release
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-          registry-url: 'https://registry.npmjs.org'
 
-      - name: Clean workspace artifacts for npm
-        run: |
-          rm -rf packages/cli/node_modules/@flux
-          rm -f bun.lock
+      - name: Verify npm package contents
+        run: npm pack --dry-run
+        working-directory: packages/cli
 
       - name: Release (dry-run)
         if: github.event_name == 'pull_request'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Prefer npm trusted publishing (OIDC via id-token: write). NPM_TOKEN is
+          # a fallback for repos that have not enabled a trusted publisher yet.
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: true
         run: npx semantic-release --dry-run
 
@@ -67,5 +68,8 @@ jobs:
         if: github.event_name == 'push'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Prefer npm trusted publishing (OIDC via id-token: write). NPM_TOKEN is
+          # a fallback for repos that have not enabled a trusted publisher yet.
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: true
         run: npx semantic-release
