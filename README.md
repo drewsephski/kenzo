@@ -67,10 +67,19 @@ npx kenzoboard init
 npx kenzoboard dev
 npx kenzoboard serve
 npx kenzoboard ready
+npx kenzoboard connect codex
 npx kenzoboard mcp
 ```
 
-`npx kenzoboard` creates or opens a local Kenzo workspace in `./.flux`, starts the bundled app, opens [http://localhost:3000](http://localhost:3000), and prints the one command Codex needs to read the same board. If port 3000 is busy, Kenzo prints the selected fallback port.
+`npx kenzoboard` creates or opens a local Kenzo workspace in `./.flux`, starts the bundled app, opens [http://localhost:3000](http://localhost:3000), and points you to the one-step Codex connector. If port 3000 is busy, Kenzo prints the selected fallback port.
+
+To connect Codex to the same board:
+
+```bash
+npx kenzoboard connect codex
+```
+
+Manual MCP commands are still available:
 
 ```bash
 # Claude Code

@@ -67,13 +67,16 @@ Add to Claude Desktop (`~/Library/Application Support/Claude/claude_desktop_conf
 }
 ```
 
-For Claude Code:
+For agent CLIs:
 
 ```bash
+# Codex one-step setup
+npx kenzoboard connect codex
+
 # Claude Code
 claude mcp add flux --env FLUX_DIR="$(pwd)/.flux" -- npx -y --package kenzoboard kenzoboard-mcp
 
-# Codex
+# Codex manual setup
 codex mcp add flux --env FLUX_DIR="$(pwd)/.flux" -- npx -y --package kenzoboard kenzoboard-mcp
 ```
 

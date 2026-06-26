@@ -9,6 +9,20 @@ MCP is the best default for Codex and Claude because it lets the agent read proj
 From the repo that contains your `.flux` workspace:
 
 ```bash
+kenzoboard connect codex
+```
+
+If you are using `npx`:
+
+```bash
+npx kenzoboard connect codex
+```
+
+The connector detects the OpenAI Codex Desktop CLI, configures the `flux` MCP server for the current `.flux` workspace, and verifies that Codex can see the server.
+
+Manual setup is also supported:
+
+```bash
 codex mcp add flux --env FLUX_DIR="$(pwd)/.flux" -- npx -y --package kenzoboard kenzoboard-mcp
 ```
 

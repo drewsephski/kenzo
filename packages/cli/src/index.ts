@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { resolve, dirname, basename } from 'path';
-import { execSync } from 'child_process';
+import { execFileSync, execSync } from 'child_process';
 import { existsSync, readFileSync, writeFileSync, mkdirSync, appendFileSync, cpSync, realpathSync } from 'fs';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { createInterface } from 'readline';
@@ -144,6 +144,9 @@ async function ensureKenzoWorkspace(): Promise<KenzoWorkspace> {
 }
 
 function codexCliCommand(): string {
+  if (process.env.CODEX_CLI_PATH && existsSync(process.env.CODEX_CLI_PATH)) {
+    return process.env.CODEX_CLI_PATH;
+  }
   const macAppCli = '/Applications/Codex.app/Contents/Resources/codex';
   return process.platform === 'darwin' && existsSync(macAppCli) ? macAppCli : 'codex';
 }
@@ -159,6 +162,13 @@ function mcpPackageCommand(): string {
     : 'npx -y --package kenzoboard kenzoboard-mcp';
 }
 
+function mcpPackageArgs(): string[] {
+  const localMcpPath = resolve(process.cwd(), 'packages/mcp/dist/index.js');
+  return existsSync(localMcpPath)
+    ? ['bun', localMcpPath]
+    : ['npx', '-y', '--package', 'kenzoboard', 'kenzoboard-mcp'];
+}
+
 function codexMcpCommand(fluxDir: string): string {
   return `${codexCliCommand()} mcp add flux --env FLUX_DIR=${quoteShell(fluxDir)} -- ${mcpPackageCommand()}`;
 }
@@ -167,7 +177,7 @@ function claudeMcpCommand(fluxDir: string): string {
   return `claude mcp add flux --env FLUX_DIR=${quoteShell(fluxDir)} -- ${mcpPackageCommand()}`;
 }
 
-function printLaunchSummary(workspace: KenzoWorkspace, command = publicCommandName()): void {
+function printLaunchSummary(workspace: KenzoWorkspace): void {
   const projectLabel = workspace.projectName && workspace.projectId
     ? `${workspace.projectName} (${workspace.projectId})`
     : 'No project selected';
@@ -185,13 +195,13 @@ function printLaunchSummary(workspace: KenzoWorkspace, command = publicCommandNa
 
   console.log('');
   console.log(`${c.bold}Connect Codex:${c.reset}`);
-  console.log(`  ${codexMcpCommand(workspace.fluxDir)}`);
+  console.log('  npx kenzoboard connect codex');
   console.log('');
   console.log(`${c.bold}Then ask Codex:${c.reset}`);
   console.log('  Pick the next ready Kenzo task, implement it, and mark it done.');
   console.log('');
-  console.log(`CLI fallback: ${c.cyan}${command} ready${c.reset}`);
-  console.log(`More setup:   ${c.cyan}${command} mcp${c.reset}`);
+  console.log(`CLI fallback: ${c.cyan}npx kenzoboard ready${c.reset}`);
+  console.log(`More setup:   ${c.cyan}npx kenzoboard mcp${c.reset}`);
 }
 
 function printMcpSetup(command = publicCommandName(), fluxDir = findFluxDir()): void {
@@ -200,6 +210,10 @@ function printMcpSetup(command = publicCommandName(), fluxDir = findFluxDir()): 
 
   console.log(`${c.bold}Agent setup${c.reset} ${c.dim}(MCP resources remain flux:// for compatibility)${c.reset}`);
   console.log(`${c.dim}Using Kenzo workspace: ${fluxDir}${c.reset}\n`);
+
+  console.log(`${c.bold}Codex one-step setup:${c.reset}`);
+  console.log('  npx kenzoboard connect codex');
+  console.log('');
 
   console.log(`${c.bold}Codex:${c.reset}`);
   console.log(`  ${codexMcpCommand(fluxDir)}`);
@@ -220,11 +234,99 @@ function printMcpSetup(command = publicCommandName(), fluxDir = findFluxDir()): 
   console.log('  3. If MCP is not connected yet, Codex can still use the CLI commands from AGENTS.md.');
 }
 
+function codexCliLooksValid(command: string): boolean {
+  try {
+    const output = execFileSync(command, ['mcp', '--help'], {
+      encoding: 'utf-8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    return output.includes('Manage external MCP servers for Codex');
+  } catch {
+    return false;
+  }
+}
+
+function resolveCodexCli(): string | null {
+  const candidates = [
+    process.env.CODEX_CLI_PATH,
+    process.platform === 'darwin' ? '/Applications/Codex.app/Contents/Resources/codex' : undefined,
+    'codex',
+  ].filter((candidate): candidate is string => Boolean(candidate));
+
+  for (const candidate of candidates) {
+    if (candidate.includes('/') && !existsSync(candidate)) continue;
+    if (codexCliLooksValid(candidate)) return candidate;
+  }
+
+  return null;
+}
+
+function runCodex(cli: string, args: string[]): string {
+  return execFileSync(cli, args, {
+    encoding: 'utf-8',
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+}
+
+async function connectCodexCommand(flags: Record<string, string | boolean | string[]>): Promise<void> {
+  const workspace = await ensureKenzoWorkspace();
+  const cli = resolveCodexCli();
+
+  if (!cli) {
+    console.error('OpenAI Codex CLI was not found.');
+    console.error('Install or open Codex Desktop, then run this again.');
+    console.error('');
+    console.error('Manual command:');
+    console.error(`  ${codexMcpCommand(workspace.fluxDir)}`);
+    process.exit(1);
+  }
+
+  const serverName = typeof flags.name === 'string' ? flags.name : 'flux';
+  const packageArgs = mcpPackageArgs();
+  const addArgs = [
+    'mcp',
+    'add',
+    serverName,
+    '--env',
+    `FLUX_DIR=${workspace.fluxDir}`,
+    '--',
+    ...packageArgs,
+  ];
+
+  try {
+    runCodex(cli, ['mcp', 'get', serverName]);
+    runCodex(cli, ['mcp', 'remove', serverName]);
+  } catch {
+    // Missing existing server is expected on first setup.
+  }
+
+  try {
+    runCodex(cli, addArgs);
+    const result = runCodex(cli, ['mcp', 'get', serverName]);
+    if (!result.includes(serverName) || !result.includes(packageArgs[0])) {
+      throw new Error('Codex did not report the expected MCP server after setup.');
+    }
+
+    console.log(`${c.green}${c.bold}Codex is connected to Kenzo.${c.reset}`);
+    console.log(`Server: ${serverName}`);
+    console.log(`Workspace: ${workspace.fluxDir}`);
+    console.log('');
+    console.log(`${c.bold}Try this in Codex:${c.reset}`);
+    console.log('  Use Kenzo to pick the next ready task, implement it, and mark it done.');
+  } catch (e: any) {
+    console.error('Failed to configure Codex MCP.');
+    console.error(e?.message || String(e));
+    console.error('');
+    console.error('Manual command:');
+    console.error(`  ${codexMcpCommand(workspace.fluxDir)}`);
+    process.exit(1);
+  }
+}
+
 async function launchKenzoApp(): Promise<void> {
-  const command = publicCommandName();
   const workspace = await ensureKenzoWorkspace();
 
-  printLaunchSummary(workspace, command);
+  printLaunchSummary(workspace);
 
   await serveCommand([], { port: String(defaultServePort()) }, { defaultPort: defaultServePort(), open: true, compact: true });
 }
@@ -887,6 +989,15 @@ async function main() {
     return;
   }
 
+  if (parsed.command === 'connect') {
+    if (parsed.subcommand === 'codex') {
+      await connectCodexCommand(parsed.flags);
+      return;
+    }
+    console.error(`Usage: ${publicCommandName()} connect codex [--name flux]`);
+    process.exit(1);
+  }
+
   // dev/serve handle their own storage initialization.
   if (parsed.command === 'dev') {
     await launchKenzoApp();
@@ -1019,6 +1130,7 @@ ${c.bold}Start:${c.reset}
   ${c.cyan}${command} init${c.reset} ${c.green}[--server URL] [--api-key KEY] [--sqlite] [--git] [--force]${c.reset}
   ${c.cyan}${command} dev${c.reset} ${c.green}[--open]${c.reset}                 Start the local Kenzo app on port ${defaultServePort()}
   ${c.cyan}${command} serve${c.reset} ${c.green}[-p port] [--data file] [--open]${c.reset}
+  ${c.cyan}${command} connect codex${c.reset} ${c.green}[--name flux]${c.reset}  Configure Codex MCP for this workspace
   ${c.cyan}${command} mcp${c.reset}                         Show Codex/Claude MCP setup commands
 
 ${c.bold}Ready Work:${c.reset}
