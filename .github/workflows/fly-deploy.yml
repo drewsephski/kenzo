@@ -10,9 +10,17 @@ jobs:
     name: Deploy app
     runs-on: ubuntu-latest
     concurrency: deploy-group    # optional: ensure only one action runs at a time
+    env:
+      HAS_FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN != '' }}
     steps:
       - uses: actions/checkout@v4
       - uses: superfly/flyctl-actions/setup-flyctl@master
       - run: flyctl deploy --remote-only
+        if: env.HAS_FLY_API_TOKEN == 'true'
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+      - name: Skip Fly deploy without token
+        if: env.HAS_FLY_API_TOKEN != 'true'
+        run: |
+          echo "::warning::FLY_API_TOKEN is not configured, so Fly deploy was skipped."
+          echo "Set the FLY_API_TOKEN repository secret to enable deployments."
