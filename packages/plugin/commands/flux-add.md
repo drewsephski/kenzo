@@ -1,11 +1,11 @@
 ---
-description: Quickly add a task to Flux from a brief description
+description: Quickly add a task to Kenzo from a brief description
 allowed-tools: mcp__flux__*
 ---
 
-# Flux Add
+# Kenzo Add (`/flux-add`)
 
-Quickly create a task in Flux from a brief description.
+Quickly create a task in Kenzo from a brief description. The command name remains `/flux-add` for compatibility with the Flux MCP tool namespace.
 
 ## Instructions
 

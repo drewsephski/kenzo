@@ -1,6 +1,6 @@
 # Installation (Docker)
 
-Docker is the recommended way to run Flux. Build the image first:
+Docker is the recommended way to run Kenzo, powered by the Flux engine. Build the image first:
 
 ```bash
 docker build -t flux-mcp .
@@ -27,7 +27,7 @@ Add to your Claude Desktop configuration file:
 Restart Claude Desktop after saving.
 For ChatGPT setup and best practices, see `docs/assistant-setup.md`.
 
-## Web Interface
+## Kenzo Web Interface
 
 Run the web server:
 
@@ -37,7 +37,7 @@ docker run -d -p 3000:3000 -v flux-data:/app/packages/data -e FLUX_DATA=/app/pac
 
 Open http://localhost:3000
 
-The web UI and MCP server share the same data volume, so changes made via Claude appear instantly in the web interface.
+The Kenzo web UI and MCP server share the same data volume, so changes made via Claude appear instantly in the web interface.
 
 ## Using a Local Directory for Data
 
@@ -68,14 +68,14 @@ Install CLI locally and connect to Docker server:
 
 ```bash
 # Install CLI
-bun add -g flux-tasks
-# or: npm install -g flux-tasks
+bun add -g kenzoboard
+# or: npm install -g kenzoboard
 
 # Initialize with Docker server
 cd your-repo
-flux init --server http://localhost:3000
+kenzoboard init --server http://localhost:3000
 
-# CLI now talks to Docker server
-flux project list
-flux ready
+# Kenzo CLI now talks to the Docker server through the Flux engine
+kenzoboard project list
+kenzoboard ready
 ```

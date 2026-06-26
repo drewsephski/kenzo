@@ -263,11 +263,17 @@ export function TaskForm({
         isOpen={isOpen}
         onClose={onClose}
         title={isEdit ? "Edit Task" : "New Task"}
-        boxClassName="!w-[70vw] !max-w-none"
+        boxClassName="!w-[min(94vw,1120px)] !max-w-none"
       >
-        <form onSubmit={handleSubmit}>
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div>
+        <form onSubmit={handleSubmit} class="space-y-5">
+        <div class="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)]">
+          <section class="space-y-4 rounded-lg border border-base-200 bg-base-200/30 p-4">
+            <div>
+              <h4 class="text-sm font-semibold text-base-content">Task details</h4>
+              <p class="mt-1 text-xs text-base-content/55">
+                Name the work, place it, and note anything holding it up.
+              </p>
+            </div>
             <div class="form-control mb-4">
               <label class="label">
                 <span class="label-text">Title *</span>
@@ -306,9 +312,9 @@ export function TaskForm({
             {isEdit && (
               <div class="form-control mb-4">
                 <label class="label">
-                  <span class="label-text">External Blocker</span>
+                  <span class="label-text">Waiting on</span>
                   {blockedReason && (
-                    <span class="badge badge-warning badge-sm">Blocked</span>
+                    <span class="badge badge-warning badge-sm">Waiting</span>
                   )}
                 </label>
                 <input
@@ -318,24 +324,22 @@ export function TaskForm({
                   value={blockedReason}
                   onInput={(e) => setBlockedReason((e.target as HTMLInputElement).value)}
                 />
-                <label class="label">
-                  <span class="label-text-alt text-base-content/50">
-                    Set to block task on external process. Clear to unblock.
-                  </span>
-                </label>
+                <p class="mt-1 text-xs leading-5 text-base-content/55">
+                  Add anything outside this task that is holding it up. Clear when ready.
+                </p>
               </div>
             )}
 
             <div class="form-control mb-4">
               <label class="label">
-                <span class="label-text">Epic</span>
+                <span class="label-text">Workstream</span>
               </label>
               <select
                 class="select select-bordered w-full"
                 value={epicId}
                 onChange={(e) => setEpicId((e.target as HTMLSelectElement).value)}
               >
-                <option value="">Unassigned</option>
+                <option value="">No workstream</option>
                 {epics.map((epic) => (
                   <option key={epic.id} value={epic.id}>
                     {epic.title}
@@ -346,14 +350,14 @@ export function TaskForm({
 
             <div class="form-control mb-6">
               <label class="label">
-                <span class="label-text">Dependencies</span>
+                <span class="label-text">Waiting on other tasks</span>
                 {dependsOn.length > 0 && (
                   <span class="label-text-alt">{dependsOn.length} selected</span>
                 )}
               </label>
               {availableTasks.length === 0 ? (
                 <p class="text-sm text-base-content/50">
-                  No other tasks available
+                  No other tasks to wait on
                 </p>
               ) : (
                 <div class="border border-base-300 rounded-lg">
@@ -361,7 +365,7 @@ export function TaskForm({
                     <div class="px-3 py-2 border-b border-base-300">
                       <input
                         type="text"
-                        placeholder="Filter tasks..."
+                        placeholder="Find tasks..."
                         class="input input-bordered input-sm w-full"
                         value={dependencyFilter}
                         onInput={(e) =>
@@ -403,19 +407,26 @@ export function TaskForm({
                 </div>
               )}
             </div>
-          </div>
+          </section>
 
-          <div class="max-h-[60vh] overflow-y-auto pr-1">
-            {/* Acceptance Criteria */}
+          <div class="space-y-4">
+            <section class="space-y-4 rounded-lg border border-base-200 bg-base-200/30 p-4">
+              <div>
+                <h4 class="text-sm font-semibold text-base-content">Finish line</h4>
+                <p class="mt-1 text-xs text-base-content/55">
+                  Capture what good looks like before the task is closed.
+                </p>
+              </div>
+              {/* Done when */}
             <div class="form-control mb-4">
               <label class="label">
-                <span class="label-text">Acceptance Criteria</span>
+                <span class="label-text">Done when</span>
                 {acceptanceCriteria.length > 0 && (
                   <span class="label-text-alt">{acceptanceCriteria.length}</span>
                 )}
               </label>
               <p class="text-xs text-base-content/50 mb-2">
-                Observable outcomes to verify task completion
+                Clear outcomes that prove this is finished
               </p>
               <div class="space-y-2">
                 {acceptanceCriteria.map((criterion, index) => (
@@ -436,7 +447,7 @@ export function TaskForm({
                 <div class="flex gap-2">
                   <input
                     type="text"
-                    placeholder="Add criterion..."
+                    placeholder="Add a done condition..."
                     class="input input-bordered input-sm flex-1"
                     value={newCriterion}
                     onInput={(e) => setNewCriterion((e.target as HTMLInputElement).value)}
@@ -454,16 +465,16 @@ export function TaskForm({
               </div>
             </div>
 
-            {/* Guardrails */}
+              {/* Rules */}
             <div class="form-control mb-4">
               <label class="label">
-                <span class="label-text">Guardrails</span>
+                <span class="label-text">Rules</span>
                 {guardrails.length > 0 && (
                   <span class="label-text-alt">{guardrails.length}</span>
                 )}
               </label>
               <p class="text-xs text-base-content/50 mb-2">
-                Numbered constraints (higher number = more critical)
+                Important constraints this work must follow
               </p>
               <div class="space-y-2">
                 {[...guardrails]
@@ -496,7 +507,7 @@ export function TaskForm({
                   />
                   <input
                     type="text"
-                    placeholder="Guardrail instruction..."
+                    placeholder="Rule to follow..."
                     class="input input-bordered input-sm flex-1"
                     value={newGuardrailText}
                     onInput={(e) => setNewGuardrailText((e.target as HTMLInputElement).value)}
@@ -513,9 +524,11 @@ export function TaskForm({
                 </div>
               </div>
             </div>
+            </section>
 
             {isEdit && (
-              <div class="form-control mb-4">
+              <section class="rounded-lg border border-base-200 bg-base-200/30 p-4">
+              <div class="form-control">
                 <label class="label">
                   <span class="label-text">Attachments</span>
                   {blobs.length > 0 && (
@@ -576,10 +589,12 @@ export function TaskForm({
                   </label>
                 </div>
               </div>
+              </section>
             )}
 
             {isEdit && (
-              <div class="form-control mb-4">
+              <section class="rounded-lg border border-base-200 bg-base-200/30 p-4">
+              <div class="form-control">
                 <label class="label">
                   <span class="label-text">Comments</span>
                   {comments.length > 0 && (
@@ -603,7 +618,7 @@ export function TaskForm({
                                     : "badge-ghost"
                                 }`}
                               >
-                                {comment.author === "mcp" ? "MCP" : "User"}
+                                {comment.author === "mcp" ? "Agent" : "User"}
                               </span>
                               {comment.agent_name && (
                                 <span class="badge badge-primary badge-xs">
@@ -663,11 +678,12 @@ export function TaskForm({
                   </div>
                 </div>
               </div>
+              </section>
             )}
           </div>
         </div>
 
-        <div class="modal-action">
+        <div class="modal-action border-t border-base-200 pt-4">
           {isEdit && (
             <button
               type="button"

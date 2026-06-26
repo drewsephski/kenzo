@@ -107,7 +107,7 @@ describe('show command', () => {
 
   it('exits with error when no id provided', async () => {
     await expect(showCommand([], {}, false)).rejects.toThrow('process.exit(1)');
-    expect(getErrors()).toContain('Usage: flux show <id> [--json]');
+    expect(getErrors()).toContain('Usage: kenzoboard show <id> [--json]');
   });
 
   it('exits with error when task not found', async () => {

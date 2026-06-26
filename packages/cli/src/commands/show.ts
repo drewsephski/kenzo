@@ -10,7 +10,7 @@ export async function showCommand(
 ): Promise<void> {
   const id = args[0];
   if (!id) {
-    console.error('Usage: flux show <id> [--json]');
+    console.error('Usage: kenzoboard show <id> [--json]');
     process.exit(1);
   }
 

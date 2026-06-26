@@ -1,5 +1,7 @@
 # Roadmap
 
+Kenzo is the product roadmap. Flux remains the engine name for the CLI, packages, storage, and MCP layer.
+
 | Status | Feature | Description |
 |--------|---------|-------------|
 | ✅ | Server-Sent Events (SSE) | Real-time updates for web while MCP is making changes |

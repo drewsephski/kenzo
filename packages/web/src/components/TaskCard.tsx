@@ -16,7 +16,7 @@ export function TaskCard({ task, onClick }: TaskCardProps) {
           <h4 class="font-medium text-sm">{task.title}</h4>
           {task.blocked && (
             <span class="badge badge-warning badge-sm" title={task.blocked_reason || undefined}>
-              {task.blocked_reason ? 'Waiting' : 'Blocked'}
+              Waiting
             </span>
           )}
         </div>
@@ -32,12 +32,12 @@ export function TaskCard({ task, onClick }: TaskCardProps) {
         )}
         {task.blocked && !task.blocked_reason && task.depends_on.length > 0 && (
           <div class="text-xs text-base-content/50 mt-1">
-            {task.depends_on.length} incomplete dep{task.depends_on.length > 1 ? 's' : ''}
+            Waiting on {task.depends_on.length} task{task.depends_on.length > 1 ? 's' : ''}
           </div>
         )}
         {!task.blocked && task.depends_on.length > 0 && (
           <div class="text-xs text-success mt-1">
-            All {task.depends_on.length} dep{task.depends_on.length > 1 ? 's' : ''} done
+            Ready after {task.depends_on.length} task{task.depends_on.length > 1 ? 's' : ''}
           </div>
         )}
         {task.status === 'in_progress' && (

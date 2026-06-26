@@ -1,12 +1,12 @@
 # Assistant Setup
 
-Ready to make Flux the brains of your workflow? Here is how to wire it into Claude Desktop and ChatGPT, plus the best practices that make it feel like the next big thing.
+Ready to make Kenzo the shared board for your human and agent workflows? The assistant-facing interface is still named Flux, so MCP configs use the `flux` server name and existing package commands.
 
 ## Claude Desktop
 
 ### Docker (recommended)
 
-Add Flux to your Claude Desktop configuration file:
+Add the Flux MCP server for Kenzo to your Claude Desktop configuration file:
 
 **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
 **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
@@ -41,7 +41,7 @@ Use a local build of the MCP server:
 
 ## ChatGPT
 
-If your ChatGPT client supports MCP servers, add Flux as a custom MCP server using the same Docker or local command shown above. The exact menu name can vary by client, but look for MCP or Connectors in Settings.
+If your ChatGPT client supports MCP servers, add the Flux MCP server for Kenzo as a custom MCP server using the same Docker or local command shown above. The exact menu name can vary by client, but look for MCP or Connectors in Settings.
 
 ### Docker (recommended)
 
@@ -57,7 +57,7 @@ Command: node
 Args: /path/to/flux/packages/mcp/dist/index.js
 ```
 
-If your ChatGPT client does not support MCP servers, you can still use Flux via the REST API and webhooks in `docs/api.md` and `docs/webhooks.md`.
+If your ChatGPT client does not support MCP servers, you can still use Kenzo via the REST API and webhooks in `docs/api.md` and `docs/webhooks.md`.
 
 ## Best Practices for a Smooth, Powerful Setup
 

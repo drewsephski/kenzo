@@ -101,7 +101,7 @@ describe('project command', () => {
 
     it('exits with error when no name provided', async () => {
       await expect(projectCommand('create', [], {}, false)).rejects.toThrow('process.exit(1)');
-      expect(getErrors()).toContain('Usage: flux project create <name> [--private]');
+      expect(getErrors()).toContain('Usage: kenzoboard project create <name> [--private]');
     });
   });
 
@@ -132,7 +132,7 @@ describe('project command', () => {
 
     it('exits with error when no id provided', async () => {
       await expect(projectCommand('update', [], {}, false)).rejects.toThrow('process.exit(1)');
-      expect(getErrors()).toContain('Usage: flux project update <id> [--name] [--desc] [--private|--public]');
+      expect(getErrors()).toContain('Usage: kenzoboard project update <id> [--name] [--desc] [--private|--public]');
     });
   });
 
@@ -156,7 +156,7 @@ describe('project command', () => {
 
     it('exits with error when no id provided', async () => {
       await expect(projectCommand('delete', [], {}, false)).rejects.toThrow('process.exit(1)');
-      expect(getErrors()).toContain('Usage: flux project delete <id>');
+      expect(getErrors()).toContain('Usage: kenzoboard project delete <id>');
     });
 
     it('outputs JSON when --json flag', async () => {
@@ -173,7 +173,7 @@ describe('project command', () => {
   describe('invalid subcommand', () => {
     it('exits with usage error', async () => {
       await expect(projectCommand('invalid', [], {}, false)).rejects.toThrow('process.exit(1)');
-      expect(getErrors()).toContain('Usage: flux project [list|create|update|delete|use]');
+      expect(getErrors()).toContain('Usage: kenzoboard project [list|create|update|delete|use]');
     });
 
     it('exits with usage error when no subcommand', async () => {

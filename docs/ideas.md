@@ -1,14 +1,14 @@
-# Ideas for Flux
+# Ideas for Kenzo
 
-Flux is intentionally unopinionated, so the best use cases are the ones you invent. Below are a few sparks to get you started.
+Kenzo is intentionally unopinionated, with the Flux engine underneath for open automation. The best use cases are the ones you invent. Below are a few sparks to get you started.
 
 ## The Obvious (and Powerful)
 
-Flux shines as a shared task brain for coding agents. Use it to track tasks, manage dependencies, and extend agent memory across sessions. Agents can create, update, and close work items via MCP, while humans keep visibility in the web UI.
+Kenzo shines as a shared task brain for coding agents. Use it to track tasks, manage dependencies, and extend agent memory across sessions. Agents can create, update, and close work items via MCP, while humans keep visibility in the web UI.
 
 ## Human + Agent Co-Pilot Patterns
 
-- **Issue-to-epic pipelines**: ingest GitHub issues, cluster them into epics, and let agents tackle each task with progress synced in Flux.
+- **Issue-to-epic pipelines**: ingest GitHub issues, cluster them into epics, and let agents tackle each task with progress synced in Kenzo.
 - **Refactor campaigns**: create a dependency chain that forces safe ordering across modules, then assign each slice to an agent.
 - **Review orchestration**: when a task hits `done`, automatically spawn review tasks and notify humans.
 
@@ -26,8 +26,8 @@ Flux shines as a shared task brain for coding agents. Use it to track tasks, man
 
 ## Wildcards
 
-- **Agent swarm control**: let multiple agents work in parallel, with Flux as the source of truth and conflict resolver.
+- **Agent swarm control**: let multiple agents work in parallel, with Kenzo as the source of truth and conflict resolver.
 - **Idea market**: submit ideas via form, auto-score them, and promote winners into epics.
 - **Company rituals**: weekly planning, retro actions, and OKR check-ins as scheduled task flows.
 
-If you want, open an issue with your workflow and we will help you model it in Flux.
+If you want, open an issue with your workflow and we will help you model it in Kenzo.

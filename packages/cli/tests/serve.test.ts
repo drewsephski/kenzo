@@ -76,7 +76,7 @@ describe('serve command', () => {
     expect(serve).toHaveBeenCalledWith(
       expect.objectContaining({ port: 3589 })
     );
-    expect(getLogs()).toContainEqual(expect.stringContaining('Starting server on http://localhost:3589'));
+    expect(getLogs()).toContainEqual(expect.stringContaining('Starting Kenzo on http://localhost:3589'));
   });
 
   it('uses custom port from -p flag', async () => {

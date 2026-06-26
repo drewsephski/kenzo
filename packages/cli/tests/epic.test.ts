@@ -52,7 +52,7 @@ describe('epic command', () => {
 
     it('exits with error when no project provided', async () => {
       await expect(epicCommand('list', [], {}, false)).rejects.toThrow('process.exit(1)');
-      expect(getErrors()).toContain('Usage: flux epic list <project>');
+      expect(getErrors()).toContain('Usage: kenzoboard epic list <project>');
     });
 
     it('outputs JSON when --json flag', async () => {
@@ -86,7 +86,7 @@ describe('epic command', () => {
 
     it('exits with error when missing args', async () => {
       await expect(epicCommand('create', ['proj-1'], {}, false)).rejects.toThrow('process.exit(1)');
-      expect(getErrors()).toContain('Usage: flux epic create <project> <title>');
+      expect(getErrors()).toContain('Usage: kenzoboard epic create <project> <title>');
     });
 
     it('outputs JSON when --json flag', async () => {
@@ -134,7 +134,7 @@ describe('epic command', () => {
 
     it('exits with error when no id provided', async () => {
       await expect(epicCommand('update', [], {}, false)).rejects.toThrow('process.exit(1)');
-      expect(getErrors()).toContain('Usage: flux epic update <id> [--title] [--status] [--note]');
+      expect(getErrors()).toContain('Usage: kenzoboard epic update <id> [--title] [--status] [--note]');
     });
   });
 
@@ -158,7 +158,7 @@ describe('epic command', () => {
 
     it('exits with error when no id provided', async () => {
       await expect(epicCommand('delete', [], {}, false)).rejects.toThrow('process.exit(1)');
-      expect(getErrors()).toContain('Usage: flux epic delete <id>');
+      expect(getErrors()).toContain('Usage: kenzoboard epic delete <id>');
     });
 
     it('outputs JSON when --json flag', async () => {
@@ -175,7 +175,7 @@ describe('epic command', () => {
   describe('invalid subcommand', () => {
     it('exits with usage error', async () => {
       await expect(epicCommand('invalid', [], {}, false)).rejects.toThrow('process.exit(1)');
-      expect(getErrors()).toContain('Usage: flux epic [list|create|update|delete]');
+      expect(getErrors()).toContain('Usage: kenzoboard epic [list|create|update|delete]');
     });
   });
 });

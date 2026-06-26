@@ -1,8 +1,10 @@
 # MCP
 
+Kenzo uses the Flux MCP server as its assistant interface. Tool names, resource URIs, and environment variables intentionally keep the `flux` prefix for compatibility.
+
 ## Remote Server Mode
 
-The MCP server can connect to a remote Flux API instead of using local storage:
+The MCP server can connect to a remote Kenzo/Flux API instead of using local storage:
 
 ```bash
 FLUX_SERVER=https://flux.example.com FLUX_API_KEY=your-key npx @flux/mcp
@@ -10,7 +12,7 @@ FLUX_SERVER=https://flux.example.com FLUX_API_KEY=your-key npx @flux/mcp
 
 | Variable | Description |
 |----------|-------------|
-| `FLUX_SERVER` | Remote Flux server URL |
+| `FLUX_SERVER` | Remote Kenzo/Flux server URL |
 | `FLUX_API_KEY` | API key for write operations |
 
 ## MCP Tools

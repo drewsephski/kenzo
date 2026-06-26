@@ -1,5 +1,7 @@
 # Architecture
 
+Kenzo is the product experience. Flux is the engine layer that provides packages, storage, CLI, MCP, and API primitives.
+
 ## Project Structure
 
 ```
@@ -13,7 +15,7 @@ packages/
 
 ## Data Storage
 
-Flux supports two storage backends, selected automatically based on file extension:
+The Flux engine supports two storage backends, selected automatically based on file extension:
 
 | Extension | Backend | Best For |
 |-----------|---------|----------|
@@ -27,7 +29,7 @@ Set via `FLUX_DATA` environment variable:
 FLUX_DATA=/app/data/flux.sqlite bun packages/server/dist/index.js
 
 # JSON (default for local dev)
-FLUX_DATA=.flux/data.json flux serve
+FLUX_DATA=.flux/data.json kenzoboard serve
 ```
 
 Docker defaults to SQLite at `/app/packages/data/flux.sqlite`.

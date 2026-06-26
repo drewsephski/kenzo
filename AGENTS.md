@@ -4,11 +4,11 @@ This file provides guidance to AI agents when working with code in this reposito
 
 ## Project Overview
 
-Flux is a Kanban board application with multi-project support, designed for both web UI and AI assistant integration via MCP (Model Context Protocol). It's a TypeScript monorepo with five packages sharing a common data store.
+Kenzo is a Kanban board application with multi-project support, designed for both web UI and AI assistant integration via MCP (Model Context Protocol). It is powered by the Flux engine, and this TypeScript monorepo keeps the internal package names as `@flux/*`.
 
 ## Dogfooding
 
-This repo uses Flux to manage itself. Tasks live on `flux-data` branch:
+This repo uses Kenzo/Flux to manage itself. Tasks live on the `flux-data` branch:
 
 ```bash
 flux pull               # Get latest tasks

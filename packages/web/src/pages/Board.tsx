@@ -27,6 +27,7 @@ import {
   ThemeToggle,
 } from "../components";
 import { useBoardPreferences } from "../hooks/useBoardPreferences";
+import { EVENTS_URL } from "../config";
 import {
   ArrowLeftIcon,
   Bars3BottomLeftIcon,
@@ -105,7 +106,6 @@ export function Board({ projectId }: BoardProps) {
 
   useEffect(() => {
     if (!projectId) return;
-    const eventsBase = import.meta.env.DEV ? "http://localhost:3000" : "";
     let source: EventSource | null = null;
     let refreshTimeout: number | null = null;
     let reconnectTimeout: number | null = null;
@@ -123,7 +123,7 @@ export function Board({ projectId }: BoardProps) {
     const connect = () => {
       if (!isMounted) return;
 
-      source = new EventSource(`${eventsBase}/api/events`);
+      source = new EventSource(EVENTS_URL);
 
       source.addEventListener("data-changed", scheduleRefresh);
 
@@ -297,7 +297,7 @@ export function Board({ projectId }: BoardProps) {
         {/* Header */}
         <div class="navbar bg-base-100 shadow-lg mb-4">
           <div class="flex-1 flex items-center">
-            <button class="btn btn-ghost btn-circle" onClick={() => route("/")}>
+            <button class="btn btn-ghost btn-circle" onClick={() => route("/projects")}>
               <ArrowLeftIcon className="h-5 w-5" />
             </button>
             <div class="flex items-center gap-2 px-2">
@@ -317,7 +317,7 @@ export function Board({ projectId }: BoardProps) {
               New Task
             </button>
             <button class="btn btn-neutral btn-sm" onClick={openNewEpic}>
-              New Epic
+              New Workstream
             </button>
           </div>
         </div>
@@ -325,8 +325,8 @@ export function Board({ projectId }: BoardProps) {
         <div class="px-6 pb-0">
           {/* Filter Bar */}
           <div class="bg-base-100 rounded-xl p-4 shadow-sm mb-6">
-            <div class="flex items-center gap-4">
-              <div class="relative flex-1 max-w-sm">
+            <div class="flex flex-wrap items-center gap-3">
+              <div class="relative min-w-56 flex-1 max-w-sm">
                 <MagnifyingGlassIcon className="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-base-content/40" />
                 <input
                   type="text"
@@ -345,13 +345,13 @@ export function Board({ projectId }: BoardProps) {
                   setFilterEpicId((e.target as HTMLSelectElement).value)
                 }
               >
-                <option value="all">All Epics</option>
+                <option value="all">All Workstreams</option>
                 {epics.map((epic) => (
                   <option key={epic.id} value={epic.id}>
                     {epic.title}
                   </option>
                 ))}
-                <option value="unassigned">Unassigned</option>
+                <option value="unassigned">No workstream</option>
               </select>
               <select
                 class="select select-bordered text-sm font-medium"
@@ -385,9 +385,9 @@ export function Board({ projectId }: BoardProps) {
               <button
                 class="btn btn-ghost btn-sm"
                 onClick={() => setCleanupDialogOpen(true)}
-                title="Clean up board"
+                title="Archive completed work"
               >
-                Clean Up
+                Archive
               </button>
               {/* View Toggle */}
               <div class="join">
@@ -435,7 +435,7 @@ export function Board({ projectId }: BoardProps) {
 
         {/* Swimlanes */}
         <div class="px-6 pb-6 space-y-4">
-          {/* Epic Swimlanes */}
+          {/* Workstream Swimlanes */}
           {epics
             .filter(
               (epic) => filterEpicId === "all" || filterEpicId === epic.id
@@ -450,7 +450,7 @@ export function Board({ projectId }: BoardProps) {
                   key={epic.id}
                   class="bg-base-100 rounded-xl shadow-sm overflow-hidden"
                 >
-                  {/* Epic Header */}
+                  {/* Workstream Header */}
                   <div
                     class="p-4 flex items-center gap-3 cursor-pointer hover:bg-base-200 transition-colors"
                     onClick={() => toggleEpicCollapse(epic.id)}
@@ -494,7 +494,7 @@ export function Board({ projectId }: BoardProps) {
                     </div>
                   </div>
 
-                  {/* Epic Content */}
+                  {/* Workstream Content */}
                   {!isCollapsed && (
                     <div class="px-4 pb-4">
                       <div class="flex gap-4">
@@ -556,7 +556,7 @@ export function Board({ projectId }: BoardProps) {
                                         e.stopPropagation();
                                         openNewTask(epic.id);
                                       }}
-                                      title="Add task to this epic"
+                                      title="Add task to this workstream"
                                     >
                                       <PlusIcon className="h-4 w-4" />
                                     </button>
@@ -606,7 +606,7 @@ export function Board({ projectId }: BoardProps) {
               );
             })}
 
-          {/* Unassigned Lane */}
+          {/* No workstream Lane */}
           {(filterEpicId === "all" || filterEpicId === "unassigned") && (
             <div class="bg-base-100 rounded-xl shadow-sm overflow-hidden">
               <div
@@ -619,7 +619,7 @@ export function Board({ projectId }: BoardProps) {
                   }`}
                 />
                 <span class="w-3 h-3 rounded-full bg-base-content/40 flex-shrink-0" />
-                <span class="font-semibold">Unassigned</span>
+                <span class="font-semibold">No workstream</span>
                 <span class="text-base-content/40 text-sm bg-base-200 px-2 py-0.5 rounded">
                   {getEpicTaskCount(undefined)} task
                   {getEpicTaskCount(undefined) !== 1 ? "s" : ""}
@@ -683,7 +683,7 @@ export function Board({ projectId }: BoardProps) {
                                     e.stopPropagation();
                                     openNewTask(undefined);
                                   }}
-                                  title="Add unassigned task"
+                                  title="Add task without a workstream"
                                 >
                                   <PlusIcon className="h-4 w-4" />
                                 </button>
@@ -714,7 +714,7 @@ export function Board({ projectId }: BoardProps) {
                                   key={task.id}
                                   task={task}
                                   epicColor="#9ca3af"
-                                  epicTitle="Unassigned"
+                                  epicTitle="No workstream"
                                   taskNumber={taskIndex + 1}
                                   onClick={() => openEditTask(task)}
                                   condensed={viewMode === "condensed"}
@@ -749,13 +749,18 @@ export function Board({ projectId }: BoardProps) {
           projectId={projectId!}
         />
 
-        {/* Cleanup Dialog */}
+        {/* Archive Dialog */}
         {cleanupDialogOpen && (
           <div class="modal modal-open">
-            <div class="modal-box">
-              <h3 class="font-bold text-lg">Clean Up Board</h3>
-              <div class="py-4 space-y-3">
-                <label class="flex items-center gap-3 cursor-pointer">
+            <div class="modal-box max-h-[88vh] overflow-hidden rounded-lg border border-base-300 bg-base-100 p-0 shadow-2xl">
+              <div class="border-b border-base-200 px-6 py-4">
+                <h3 class="text-lg font-semibold">Archive completed work</h3>
+                <p class="mt-1 text-sm text-base-content/60">
+                  Keep the active board focused without deleting useful history.
+                </p>
+              </div>
+              <div class="space-y-3 px-6 py-5">
+                <label class="flex cursor-pointer items-center gap-3 rounded-lg border border-base-200 bg-base-200/30 p-3">
                   <input
                     type="checkbox"
                     class="checkbox"
@@ -766,14 +771,14 @@ export function Board({ projectId }: BoardProps) {
                       )
                     }
                   />
-                  <span>Archive Done Tasks</span>
+                  <span class="flex-1 text-sm font-medium">Archive completed tasks</span>
                   {doneTaskCount > 0 && (
-                    <span class="text-base-content/50 text-sm">
-                      ({doneTaskCount} task{doneTaskCount !== 1 ? "s" : ""})
+                    <span class="text-sm text-base-content/50">
+                      {doneTaskCount}
                     </span>
                   )}
                 </label>
-                <label class="flex items-center gap-3 cursor-pointer">
+                <label class="flex cursor-pointer items-center gap-3 rounded-lg border border-base-200 bg-base-200/30 p-3">
                   <input
                     type="checkbox"
                     class="checkbox"
@@ -784,10 +789,10 @@ export function Board({ projectId }: BoardProps) {
                       )
                     }
                   />
-                  <span>Archive Empty Epics</span>
+                  <span class="text-sm font-medium">Archive empty workstreams</span>
                 </label>
               </div>
-              <div class="modal-action">
+              <div class="modal-action border-t border-base-200 px-6 py-4">
                 <button
                   class="btn btn-ghost"
                   onClick={() => {
@@ -803,7 +808,7 @@ export function Board({ projectId }: BoardProps) {
                   onClick={handleCleanup}
                   disabled={!cleanupArchiveTasks && !cleanupArchiveEpics}
                 >
-                  Clean
+                  Archive
                 </button>
               </div>
             </div>

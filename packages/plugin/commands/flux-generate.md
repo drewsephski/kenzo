@@ -1,17 +1,17 @@
 ---
-description: Generate epics and tasks in Flux from project requirements
+description: Generate Kenzo epics and tasks from project requirements
 allowed-tools: mcp__flux__*
 ---
 
-# Flux Generate
+# Kenzo Generate (`/flux-generate`)
 
-Analyze the current project and generate a structured breakdown of epics and tasks in Flux.
+Analyze the current project and generate a structured breakdown of epics and tasks in Kenzo.
 
 ## Process
 
 1. **Gather Requirements**: Read README.md, PRD documents, specs, or any files the user specifies. If none exist, ask the user to describe what they're building.
 
-2. **Identify the Project**: Check if a Flux project exists for this codebase using `list_projects`. If not, create one with `create_project`.
+2. **Identify the Project**: Check if a Kenzo project exists for this codebase using `list_projects`. If not, create one with `create_project`.
 
 3. **Define Epics**: Break down the requirements into major features or workstreams. Each epic should represent a distinct deliverable. Create them with `create_epic`.
 

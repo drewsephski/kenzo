@@ -1,7 +1,6 @@
 import type { Task, Epic, Project, Webhook, WebhookDelivery, WebhookEventType, TaskComment, CommentAuthor, KeyScope, Blob as FluxBlob } from '@flux/shared';
 import { getToken } from './auth';
-
-const API_BASE = import.meta.env.DEV ? 'http://localhost:3000/api' : '/api';
+import { API_BASE } from '../config';
 
 // Create fetch wrapper with auth headers
 function authFetch(url: string, options: RequestInit = {}): Promise<Response> {

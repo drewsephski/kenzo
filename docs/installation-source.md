@@ -1,5 +1,7 @@
 # Installation (From Source)
 
+This runs Kenzo from source while keeping the underlying package names as `@flux/*`. The public CLI command is `kenzoboard`; `flux` remains available for compatibility.
+
 ## Prerequisites
 
 - [Bun](https://bun.sh/) 1.1+
@@ -17,7 +19,7 @@ bun run build
 bun --filter @flux/server start
 ```
 
-Visit http://localhost:3000
+Visit http://localhost:3000 to open Kenzo.
 
 ## Development Mode
 
@@ -29,21 +31,22 @@ bun --filter @flux/server dev
 bun --filter @flux/web dev
 ```
 
-Web UI will be at http://localhost:5173 (proxies API to :3000)
+Kenzo's web UI will be at http://localhost:5173. The API runs on :3000 by default.
 
 ## CLI
 
-The CLI (`flux`) provides full task management from the terminal.
+The Kenzo CLI (`kenzoboard`) provides full task management from the terminal, powered by the Flux engine.
 
 ```bash
 # Install from npm (recommended)
-npm install -g flux-tasks
+npx kenzoboard
+npm install -g kenzoboard
 
 # Or build and link from source
 cd packages/cli && bun run build && bun link
 
 # Or run directly
-bun packages/cli/src/index.ts
+bun packages/cli/src/index.ts help
 ```
 
 See [cli.md](./cli.md) for full CLI documentation.

@@ -1,14 +1,14 @@
 #!/usr/bin/env bun
 
-import { resolve, dirname } from 'path';
+import { resolve, dirname, basename } from 'path';
 import { execSync } from 'child_process';
-import { existsSync, readFileSync, writeFileSync, mkdirSync, appendFileSync, cpSync } from 'fs';
-import { fileURLToPath } from 'url';
+import { existsSync, readFileSync, writeFileSync, mkdirSync, appendFileSync, cpSync, realpathSync } from 'fs';
+import { fileURLToPath, pathToFileURL } from 'url';
 import { createInterface } from 'readline';
 import { setStorageAdapter, initStore } from '@flux/shared';
 import { createAdapter } from '@flux/shared/adapters';
 import { createFilesystemBlobStorage, setBlobStorage } from '@flux/shared/blob-storage';
-import { type FluxConfig, findFluxDir, readConfig, writeConfig, loadEnvLocal, resolveDataPath } from './config.js';
+import { type FluxConfig, findFluxDir, readConfig, readConfigRaw, writeConfig, loadEnvLocal, resolveDataPath } from './config.js';
 
 // ANSI colors
 const c = {
@@ -51,6 +51,133 @@ import { blobCommand } from './commands/blob.js';
 import { initClient, exportAll, importAll, getProjects, createProject } from './client.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+
+function publicCommandName(): 'kenzoboard' | 'flux' {
+  const invoked = basename(process.argv[1] || '');
+  return invoked === 'flux' ? 'flux' : 'kenzoboard';
+}
+
+function isCliEntrypoint(): boolean {
+  if (!process.argv[1]) return false;
+
+  try {
+    return realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url));
+  } catch {
+    return import.meta.url === pathToFileURL(process.argv[1]).href;
+  }
+}
+
+function defaultServePort(): number {
+  return publicCommandName() === 'flux' ? 3589 : 3000;
+}
+
+function findExistingFluxDirFromCwd(): string | null {
+  let dir = process.cwd();
+  while (dirname(dir) !== dir) {
+    const fluxDir = resolve(dir, '.flux');
+    if (existsSync(fluxDir)) {
+      return fluxDir;
+    }
+    dir = dirname(dir);
+  }
+  return null;
+}
+
+function ensureFluxIgnored(): void {
+  const gitRoot = findGitRoot();
+  const gitignorePath = gitRoot ? resolve(gitRoot, '.gitignore') : resolve(process.cwd(), '.gitignore');
+  const gitignoreEntry = '.flux/';
+  let gitignoreContent = existsSync(gitignorePath) ? readFileSync(gitignorePath, 'utf-8') : '';
+  if (!gitignoreContent.split('\n').some(line => line.trim() === gitignoreEntry)) {
+    const newline = gitignoreContent.length > 0 && !gitignoreContent.endsWith('\n') ? '\n' : '';
+    appendFileSync(gitignorePath, `${newline}${gitignoreEntry}\n`);
+    console.log(`Added .flux/ to ${gitRoot ? gitignorePath : '.gitignore'}`);
+  }
+}
+
+async function ensureKenzoWorkspace(): Promise<{ projectId?: string; projectName?: string }> {
+  const fluxDir = findExistingFluxDirFromCwd() || resolve(process.cwd(), '.flux');
+  const configPath = resolve(fluxDir, 'config.json');
+  const jsonPath = resolve(fluxDir, 'data.json');
+  const sqlitePath = resolve(fluxDir, 'data.sqlite');
+
+  if (!existsSync(fluxDir)) {
+    mkdirSync(fluxDir, { recursive: true });
+    writeConfig(fluxDir, {});
+    writeFileSync(jsonPath, JSON.stringify({ projects: [], epics: [], tasks: [] }, null, 2));
+    ensureFluxIgnored();
+    console.log(`Created local Kenzo workspace at ${fluxDir}`);
+  } else if (!existsSync(configPath)) {
+    writeConfig(fluxDir, {});
+  }
+
+  const config = readConfigRaw(fluxDir);
+  if (!config.server && !existsSync(jsonPath) && !existsSync(sqlitePath)) {
+    writeFileSync(jsonPath, JSON.stringify({ projects: [], epics: [], tasks: [] }, null, 2));
+  }
+
+  const storage = initStorage();
+  const projects = await getProjects();
+  let projectId = storage.project;
+  let projectName = projects.find(project => project.id === projectId)?.name;
+
+  if (projects.length === 0) {
+    const defaultName = basename(process.cwd()) || 'Kenzo';
+    const project = await createProject(defaultName);
+    projectId = project.id;
+    projectName = project.name;
+    const nextConfig = readConfigRaw(fluxDir);
+    nextConfig.project = project.id;
+    writeConfig(fluxDir, nextConfig);
+    console.log(`Created first project: ${project.name} (${project.id})`);
+  } else if (!projectId || !projects.some(project => project.id === projectId)) {
+    const project = projects[0];
+    projectId = project.id;
+    projectName = project.name;
+    const nextConfig = readConfigRaw(fluxDir);
+    nextConfig.project = project.id;
+    writeConfig(fluxDir, nextConfig);
+    console.log(`Using project: ${project.name} (${project.id})`);
+  }
+
+  return { projectId, projectName };
+}
+
+function printMcpSetup(command = publicCommandName()): void {
+  const dockerCommand = 'docker run -i --rm -v "$(pwd)/.flux:/app/packages/data" -e FLUX_DATA=/app/packages/data/flux.sqlite flux-mcp bun packages/mcp/dist/index.js';
+  const localMcpPath = resolve(process.cwd(), 'packages/mcp/dist/index.js');
+
+  console.log(`${c.bold}Agent setup${c.reset} ${c.dim}(MCP resources remain flux:// for compatibility)${c.reset}\n`);
+
+  if (existsSync(localMcpPath)) {
+    console.log(`${c.bold}Codex:${c.reset}`);
+    console.log(`  codex mcp add flux -- bun ${localMcpPath}`);
+    console.log(`${c.bold}Claude Code:${c.reset}`);
+    console.log(`  claude mcp add flux -- bun ${localMcpPath}`);
+  } else {
+    console.log(`${c.bold}Codex:${c.reset}`);
+    console.log(`  codex mcp add flux -- ${dockerCommand}`);
+    console.log(`${c.bold}Claude Code:${c.reset}`);
+    console.log(`  claude mcp add flux -- ${dockerCommand}`);
+  }
+
+  console.log('');
+  console.log(`Run ${c.cyan}${command} ready${c.reset} to see agent-ready work.`);
+}
+
+async function launchKenzoApp(): Promise<void> {
+  const command = publicCommandName();
+  const { projectId, projectName } = await ensureKenzoWorkspace();
+
+  if (projectId && projectName) {
+    console.log(`Opening project: ${projectName} (${projectId})`);
+  }
+  console.log('');
+  console.log(`${c.bold}Next step after Kenzo opens:${c.reset}`);
+  printMcpSetup(command);
+
+  await serveCommand([], { port: String(defaultServePort()) }, { defaultPort: defaultServePort(), open: true });
+}
 
 // Flux instructions for AGENTS.md/CLAUDE.md
 const FLUX_INSTRUCTIONS = `<!-- FLUX:START -->
@@ -182,7 +309,7 @@ async function doctorCommand(flags: Record<string, string | boolean | string[]>)
   let issues = 0;
   let fixed = 0;
 
-  console.log(`${c.bold}Flux Doctor${c.reset}\n`);
+  console.log(`${c.bold}Kenzo Doctor${c.reset} ${c.dim}(Flux engine)${c.reset}\n`);
 
   // Check 1: .flux directory exists
   let fluxDir: string;
@@ -190,14 +317,14 @@ async function doctorCommand(flags: Record<string, string | boolean | string[]>)
     fluxDir = findFluxDir();
   } catch {
     console.log(`${c.yellow}!${c.reset} No .flux directory found`);
-    console.log(`  Run ${c.cyan}flux init${c.reset} to initialize\n`);
+    console.log(`  Run ${c.cyan}${publicCommandName()} init${c.reset} to initialize\n`);
     return;
   }
 
   const fluxDirExists = existsSync(fluxDir);
   if (!fluxDirExists) {
     console.log(`${c.yellow}!${c.reset} .flux directory not found at ${fluxDir}`);
-    console.log(`  Run ${c.cyan}flux init${c.reset} to initialize\n`);
+    console.log(`  Run ${c.cyan}${publicCommandName()} init${c.reset} to initialize\n`);
     return;
   }
   console.log(`${c.green}OK${c.reset} .flux directory: ${fluxDir}`);
@@ -408,6 +535,12 @@ export function output(data: unknown, json: boolean): void {
 // Main CLI
 async function main() {
   const args = process.argv.slice(2);
+
+  if (args.length === 0) {
+    await launchKenzoApp();
+    return;
+  }
+
   const parsed = parseArgs(args);
   const json = parsed.flags.json === true;
 
@@ -456,12 +589,12 @@ async function main() {
         }
 
         if (warnings.length > 0) {
-          console.log(c.yellow('\n⚠ Config mismatch detected:'));
-          warnings.forEach(w => console.log(`  ${c.yellow('•')} ${w}`));
-          console.log(c.dim('\nOther developers may not see your tasks if you proceed.'));
+          console.log(`\n${c.yellow}!${c.reset} Config mismatch detected:`);
+          warnings.forEach(w => console.log(`  ${c.yellow}-${c.reset} ${w}`));
+          console.log(`${c.dim}\nOther developers may not see your tasks if you proceed.${c.reset}`);
 
           if (parsed.flags.force === true) {
-            console.log(c.dim('Proceeding due to --force flag.\n'));
+            console.log(`${c.dim}Proceeding due to --force flag.\n${c.reset}`);
           } else if (isInteractive()) {
             const answer = await prompt('\nOverwrite existing config? [y/N]: ');
             if (!answer.toLowerCase().startsWith('y')) {
@@ -480,10 +613,10 @@ async function main() {
 
     if (!serverUrl && !useGit && isNew && isInteractive()) {
       // Interactive mode for new init
-      console.log(`${c.bold}Flux Setup${c.reset}\n`);
+      console.log(`${c.bold}Kenzo Setup${c.reset} ${c.dim}(Flux engine)${c.reset}\n`);
       console.log('Choose how to sync tasks:\n');
       console.log(`  ${c.cyan}1${c.reset}) ${c.bold}Git branches${c.reset} (default) - sync via flux-data branch`);
-      console.log(`  ${c.cyan}2${c.reset}) ${c.bold}Server${c.reset} - connect to a Flux server\n`);
+      console.log(`  ${c.cyan}2${c.reset}) ${c.bold}Server${c.reset} - connect to a Kenzo/Flux server\n`);
 
       const choice = await prompt('Choice [1]: ');
 
@@ -660,7 +793,7 @@ async function main() {
     } else {
       const msg = parsed.subcommand || 'update tasks';
       if (!existsSync(dataPath)) {
-        console.error('No .flux/data.json found. Run: flux init');
+        console.error(`No .flux/data.json found. Run: ${publicCommandName()} init`);
         process.exit(1);
       }
 
@@ -699,9 +832,22 @@ async function main() {
     return;
   }
 
-  // Serve handles its own storage initialization
+  if (parsed.command === 'mcp') {
+    printMcpSetup();
+    return;
+  }
+
+  // dev/serve handle their own storage initialization.
+  if (parsed.command === 'dev') {
+    await launchKenzoApp();
+    return;
+  }
+
   if (parsed.command === 'serve') {
-    await serveCommand(parsed.args, parsed.flags);
+    if (publicCommandName() === 'kenzoboard') {
+      await ensureKenzoWorkspace();
+    }
+    await serveCommand(parsed.args, parsed.flags, { defaultPort: defaultServePort(), open: parsed.flags.open === true });
     return;
   }
 
@@ -736,7 +882,7 @@ async function main() {
     const storage = initStorage();
     defaultProject = storage.project;
   } catch (e) {
-    console.error('No .flux directory found. Run: flux init');
+    console.error(`No .flux directory found. Run: ${publicCommandName()} init`);
     process.exit(1);
   }
 
@@ -780,7 +926,7 @@ async function main() {
     case 'import': {
       const file = parsed.subcommand;
       if (!file) {
-        console.error('Usage: flux import <file> [--merge]');
+        console.error(`Usage: ${publicCommandName()} import <file> [--merge]`);
         process.exit(1);
       }
       let content: string;
@@ -811,92 +957,85 @@ async function main() {
     }
     case 'help':
     default: {
-      const showLogo = parsed.flags['no-logo'] !== true;
-      if (showLogo) {
-        console.log(`                                   ⠀⠀⠀⠀⠀⠐⠠⠀⠀⠀⠀⠀⡀⠀⠀⠀⠀⠀⡀⠀⠀⠀⠄⠀⠀⠀⠀
-                                   ⠀⠀⠀⡁⣾⠷⠄⠀⠈⠈⠀⠀⠀⠀⠀⠉⠀⠁⠀⣤⣾⡇⢰⠀⠀⠀⠀
-                                   ⠀⠀⠀⠁⢫⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢺⡇⠈⠀⠀⠀⠀
-                                   ⠀⠀⠀⠎⠀⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠠⡟⠀⡅⠀⠀⠀⠀
-${c.cyan}███████╗██╗     ██╗   ██╗██╗  ██╗${c.reset}  ⠀⠀⠈⢂⠁⠀⢀⣤⢄⠀⠀⠀⠀⢀⣀⡀⠀⠀⠀⠀⠱⣀⣰⠀⠀⠀⠀
-${c.cyan}██╔════╝██║     ██║   ██║╚██╗██╔╝${c.reset}  ⠀⠀⢠⠂⠀⠀⠸⣻⡾⠀⠀⠀⠀⣷⣿⢿⠀⠀⠀⠀⠀⠱⡀⠀⠀⠀⠀
-${c.cyan}█████╗  ██║     ██║   ██║ ╚███╔╝${c.reset}   ⠀⠀⠀⠧⠀⢀⠀⠀⠀⠐⠖⠀⠀⠈⠋⠈⢀⠀⠀⢠⣾⣿⠃⠀⠀⠀⠀
-${c.cyan}██╔══╝  ██║     ██║   ██║ ██╔██╗${c.reset}   ⠀⠀⠀⠀⢟⡦⠿⢿⣤⣀⠀⠀⢀⣠⣦⣶⡟⣀⣀⣼⣿⠇⠀⠀⠀⠀⠀
-${c.cyan}██║     ███████╗╚██████╔╝██╔╝ ██╗${c.reset}  ⠀⠀⠀⠀⢰⣿⠶⣤⠀⠙⠟⠛⠉⣉⣭⣉⣹⣿⣿⣿⡏⠀⠀⠀⠀⠀⠀
-${c.cyan}╚═╝     ╚══════╝ ╚═════╝ ╚═╝  ╚═╝${c.reset}  ⠀⠀⠀⣰⡵⢛⡁⠀⠀⠀⠀⠀⠘⠛⠿⣋⡛⠿⡿⣿⣷⡀⠀⠀⠀⠀⠀
-                                   ⠀⢀⣴⢟⣴⣯⡀⠀⠀⠀⠀⠀⣴⣿⣦⠀⡙⢷⣌⡛⠿⣷⣄⠀⠀⠀⠀
-                                   ⢠⣾⣏⣾⣿⣿⣷⠀⠀⠀⠀⠀⢻⣿⣿⣧⡹⣿⣿⣫⡛⢿⣿⣿⣶⣄⡀
-                                   ⢣⡻⢿⠛⢿⣿⣿⣷⣦⣤⣤⣶⣿⣿⣿⣿⣷⣿⣿⣿⣿⣷⣽⡿⣿⡿⡼
-                                   ⠀⠉⠛⠀⠀⠈⠙⢻⣿⣿⣿⣿⢿⣿⣿⣿⣿⣿⠟⠿⣟⣻⣟⡻⠤⠊⠀
-                                   ⠀⠀⠀⠀⠀⠀⠀⠀⠹⠿⠟⠁⠀⠙⢿⣿⡿⠋⠀⠀⠀⠀⠀⠀⠀⠀⠀
-`);
-      }
-      console.log(`${c.cyan}${c.bold}flux${c.reset} ${c.dim}- CLI for Flux task management${c.reset}
+      const command = publicCommandName();
+      const compat = command === 'kenzoboard'
+        ? `\n${c.bold}Compatibility:${c.reset}\n  ${c.cyan}flux ready${c.reset}, ${c.cyan}flux task create ...${c.reset}, and other Flux engine commands still work.\n`
+        : '';
+      console.log(`${c.cyan}${c.bold}Kenzo${c.reset} ${c.dim}- local-first board for human-led AI work${c.reset}
+${c.dim}Powered by the Flux engine for CLI, MCP, sync, storage, and APIs.${c.reset}
 
-${c.bold}Commands:${c.reset}
-  ${c.cyan}flux init${c.reset} ${c.green}[--server URL] [--api-key KEY] [--sqlite] [--git] [--force]${c.reset}  Initialize .flux
-  ${c.cyan}flux ready${c.reset} ${c.green}[--json]${c.reset}                Show unblocked tasks sorted by priority
-  ${c.cyan}flux show${c.reset} ${c.yellow}<id>${c.reset} ${c.green}[--json]${c.reset}            Show task details with comments
-  ${c.cyan}flux prime${c.reset} ${c.green}[--mcp] [--full]${c.reset}        Output workflow context for AI hooks
+${c.bold}Start:${c.reset}
+  ${c.cyan}${command}${c.reset}                              Create/open a local workspace and start Kenzo
+  ${c.cyan}${command} init${c.reset} ${c.green}[--server URL] [--api-key KEY] [--sqlite] [--git] [--force]${c.reset}
+  ${c.cyan}${command} dev${c.reset} ${c.green}[--open]${c.reset}                 Start the local Kenzo app on port ${defaultServePort()}
+  ${c.cyan}${command} serve${c.reset} ${c.green}[-p port] [--data file] [--open]${c.reset}
+  ${c.cyan}${command} mcp${c.reset}                         Show Codex/Claude MCP setup commands
 
-  ${c.cyan}flux project list${c.reset} ${c.green}[--json]${c.reset}         List all projects (* = current)
-  ${c.cyan}flux project use${c.reset} ${c.yellow}<id>${c.reset}              Set default project
-  ${c.cyan}flux project create${c.reset} ${c.yellow}<name>${c.reset} ${c.green}[--private]${c.reset}  Create a project
-  ${c.cyan}flux project update${c.reset} ${c.yellow}<id>${c.reset} ${c.green}[--name] [--desc] [--private|--public]${c.reset}
-  ${c.cyan}flux project delete${c.reset} ${c.yellow}<id>${c.reset}
+${c.bold}Ready Work:${c.reset}
+  ${c.cyan}${command} ready${c.reset} ${c.green}[--json]${c.reset}               Show unblocked tasks sorted by priority
+  ${c.cyan}${command} show${c.reset} ${c.yellow}<id>${c.reset} ${c.green}[--json]${c.reset}           Show task details with comments
+  ${c.cyan}${command} prime${c.reset} ${c.green}[--mcp] [--full]${c.reset}       Output workflow context for AI hooks
 
-  ${c.cyan}flux epic list${c.reset} ${c.yellow}<project>${c.reset} ${c.green}[--json]${c.reset}  List epics in project
-  ${c.cyan}flux epic create${c.reset} ${c.yellow}<project> <title>${c.reset} Create an epic
-  ${c.cyan}flux epic update${c.reset} ${c.yellow}<id>${c.reset} ${c.green}[--title] [--status] [--note]${c.reset}
-  ${c.cyan}flux epic delete${c.reset} ${c.yellow}<id>${c.reset}
+${c.bold}Projects:${c.reset}
+  ${c.cyan}${command} project list${c.reset} ${c.green}[--json]${c.reset}        List all projects (* = current)
+  ${c.cyan}${command} project use${c.reset} ${c.yellow}<id>${c.reset}             Set default project
+  ${c.cyan}${command} project create${c.reset} ${c.yellow}<name>${c.reset} ${c.green}[--private]${c.reset}
+  ${c.cyan}${command} project update${c.reset} ${c.yellow}<id>${c.reset} ${c.green}[--name] [--desc] [--private|--public]${c.reset}
+  ${c.cyan}${command} project delete${c.reset} ${c.yellow}<id>${c.reset}
 
-  ${c.cyan}flux task list${c.reset} ${c.green}[project] [--json] [--epic] [--status]${c.reset}
-  ${c.cyan}flux task create${c.reset} ${c.green}[project]${c.reset} ${c.yellow}<title>${c.reset} ${c.green}[-P 0|1|2] [-e epic] [--ac ...] [--guardrail ...]${c.reset}
-  ${c.cyan}flux task update${c.reset} ${c.yellow}<id>${c.reset} ${c.green}[--title] [--status] [--note] [--epic] [--blocked] [--ac ...] [--guardrail ...]${c.reset}
-  ${c.cyan}flux task done${c.reset} ${c.yellow}<id>${c.reset} ${c.green}[--note]${c.reset}       Mark task done
-  ${c.cyan}flux task start${c.reset} ${c.yellow}<id>${c.reset}               Mark task in_progress
+${c.bold}Tasks:${c.reset}
+  ${c.cyan}${command} task list${c.reset} ${c.green}[project] [--json] [--epic] [--status]${c.reset}
+  ${c.cyan}${command} task create${c.reset} ${c.green}[project]${c.reset} ${c.yellow}<title>${c.reset} ${c.green}[-P 0|1|2] [-e epic] [--ac ...] [--guardrail ...]${c.reset}
+  ${c.cyan}${command} task update${c.reset} ${c.yellow}<id>${c.reset} ${c.green}[--title] [--status] [--note] [--epic] [--blocked] [--ac ...] [--guardrail ...]${c.reset}
+  ${c.cyan}${command} task start${c.reset} ${c.yellow}<id>${c.reset}
+  ${c.cyan}${command} task done${c.reset} ${c.yellow}<id>${c.reset} ${c.green}[--note]${c.reset}
+
+${c.bold}Epics:${c.reset}
+  ${c.cyan}${command} epic list${c.reset} ${c.yellow}<project>${c.reset} ${c.green}[--json]${c.reset}
+  ${c.cyan}${command} epic create${c.reset} ${c.yellow}<project> <title>${c.reset}
+  ${c.cyan}${command} epic update${c.reset} ${c.yellow}<id>${c.reset} ${c.green}[--title] [--status] [--note]${c.reset}
+  ${c.cyan}${command} epic delete${c.reset} ${c.yellow}<id>${c.reset}
 
 ${c.bold}Blobs:${c.reset}
-  ${c.cyan}flux blob attach${c.reset} ${c.yellow}<task-id> <file>${c.reset}  Attach a file to a task
-  ${c.cyan}flux blob get${c.reset} ${c.yellow}<blob-id>${c.reset} ${c.green}[path]${c.reset}     Download blob to file
-  ${c.cyan}flux blob list${c.reset} ${c.green}[--task <id>]${c.reset}       List blobs
-  ${c.cyan}flux blob delete${c.reset} ${c.yellow}<blob-id>${c.reset}         Delete a blob
+  ${c.cyan}${command} blob attach${c.reset} ${c.yellow}<task-id> <file>${c.reset}
+  ${c.cyan}${command} blob get${c.reset} ${c.yellow}<blob-id>${c.reset} ${c.green}[path]${c.reset}
+  ${c.cyan}${command} blob list${c.reset} ${c.green}[--task <id>]${c.reset}
+  ${c.cyan}${command} blob delete${c.reset} ${c.yellow}<blob-id>${c.reset}
 
 ${c.bold}Data:${c.reset}
-  ${c.cyan}flux export${c.reset} ${c.green}[-o file]${c.reset}              Export all data to JSON
-  ${c.cyan}flux import${c.reset} ${c.yellow}<file>${c.reset} ${c.green}[--merge]${c.reset}      Import data from JSON (use - for stdin)
-  ${c.cyan}flux doctor${c.reset} ${c.green}[--fix]${c.reset}                Diagnose and fix common issues
+  ${c.cyan}${command} export${c.reset} ${c.green}[-o file]${c.reset}
+  ${c.cyan}${command} import${c.reset} ${c.yellow}<file>${c.reset} ${c.green}[--merge]${c.reset}
+  ${c.cyan}${command} doctor${c.reset} ${c.green}[--fix]${c.reset}
 
-${c.bold}Sync:${c.reset} ${c.dim}(git-based team sync via flux-data branch)${c.reset}
-  ${c.cyan}flux pull${c.reset}                          Pull latest tasks from flux-data branch
-  ${c.cyan}flux push${c.reset} ${c.yellow}[message]${c.reset}                Push tasks to flux-data branch
-
-${c.bold}Server:${c.reset}
-  ${c.cyan}flux serve${c.reset} ${c.green}[-p port] [--data file]${c.reset}  Start web UI (port 3589 = FLUX on keypad)
+${c.bold}Sync:${c.reset} ${c.dim}(Flux engine compatibility via flux-data branch)${c.reset}
+  ${c.cyan}${command} pull${c.reset}
+  ${c.cyan}${command} push${c.reset} ${c.yellow}[message]${c.reset}
 
 ${c.bold}Auth:${c.reset} ${c.dim}(server mode only)${c.reset}
-  ${c.cyan}flux auth${c.reset}                          Authenticate via browser
-  ${c.cyan}flux auth create-key${c.reset} ${c.green}--name NAME [-p PROJECT]${c.reset}  Create API key
-  ${c.cyan}flux auth list-keys${c.reset}                List API keys
-  ${c.cyan}flux auth revoke${c.reset} ${c.yellow}<id>${c.reset}             Revoke an API key
-  ${c.cyan}flux auth status${c.reset}                   Check auth status
+  ${c.cyan}${command} auth${c.reset}
+  ${c.cyan}${command} auth create-key${c.reset} ${c.green}--name NAME [-p PROJECT]${c.reset}
+  ${c.cyan}${command} auth list-keys${c.reset}
+  ${c.cyan}${command} auth revoke${c.reset} ${c.yellow}<id>${c.reset}
+  ${c.cyan}${command} auth status${c.reset}
 
 ${c.bold}Flags:${c.reset}
-  ${c.green}--json${c.reset}                             Output as JSON
-  ${c.green}--force${c.reset}                            Overwrite config without prompting (init)
-  ${c.green}-P, --priority${c.reset}                     Priority (0=P0, 1=P1, 2=P2)
-  ${c.green}-e, --epic${c.reset}                         Epic ID
-  ${c.green}--blocked${c.reset}                          External blocker ("reason" or "clear")
-  ${c.green}--ac${c.reset}                               Acceptance criterion (repeatable)
-  ${c.green}--guardrail${c.reset}                        Guardrail as "999:text" (repeatable)
-  ${c.green}--data${c.reset}                             Data file path (serve command)
-  ${c.green}--no-logo${c.reset}                          Hide logo in help output
-`);
+  ${c.green}--json${c.reset}                            Output as JSON
+  ${c.green}--force${c.reset}                           Overwrite config without prompting (init)
+  ${c.green}-P, --priority${c.reset}                    Priority (0=P0, 1=P1, 2=P2)
+  ${c.green}-e, --epic${c.reset}                        Epic ID
+  ${c.green}--blocked${c.reset}                         External blocker ("reason" or "clear")
+  ${c.green}--ac${c.reset}                              Acceptance criterion (repeatable)
+  ${c.green}--guardrail${c.reset}                       Guardrail as "999:text" (repeatable)
+  ${c.green}--data${c.reset}                            Data file path (serve command)
+${compat}`);
       break;
     }
   }
 }
 
-main().catch((e) => {
-  console.error(e.message);
-  process.exit(1);
-});
+if (isCliEntrypoint()) {
+  main().catch((e) => {
+    console.error(e.message);
+    process.exit(1);
+  });
+}

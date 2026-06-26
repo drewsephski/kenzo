@@ -17,7 +17,7 @@ export async function epicCommand(
     case 'list': {
       const projectId = args[0];
       if (!projectId) {
-        console.error('Usage: flux epic list <project>');
+        console.error('Usage: kenzoboard epic list <project>');
         process.exit(1);
       }
       const epics = await getEpics(projectId);
@@ -39,7 +39,7 @@ export async function epicCommand(
       const projectId = args[0];
       const title = args[1];
       if (!projectId || !title) {
-        console.error('Usage: flux epic create <project> <title>');
+        console.error('Usage: kenzoboard epic create <project> <title>');
         process.exit(1);
       }
       const notes = (flags.note || flags.notes) as string | undefined;
@@ -51,7 +51,7 @@ export async function epicCommand(
     case 'update': {
       const id = args[0];
       if (!id) {
-        console.error('Usage: flux epic update <id> [--title] [--status] [--note]');
+        console.error('Usage: kenzoboard epic update <id> [--title] [--status] [--note]');
         process.exit(1);
       }
       const updates: { title?: string; status?: string; notes?: string } = {};
@@ -70,7 +70,7 @@ export async function epicCommand(
     case 'delete': {
       const id = args[0];
       if (!id) {
-        console.error('Usage: flux epic delete <id>');
+        console.error('Usage: kenzoboard epic delete <id>');
         process.exit(1);
       }
       const epic = await getEpic(id);
@@ -84,7 +84,7 @@ export async function epicCommand(
     }
 
     default:
-      console.error('Usage: flux epic [list|create|update|delete]');
+      console.error('Usage: kenzoboard epic [list|create|update|delete]');
       process.exit(1);
   }
 }

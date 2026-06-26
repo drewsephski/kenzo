@@ -1,11 +1,11 @@
 ---
-description: Show current Flux board status and what to work on next
+description: Show current Kenzo board status and what to work on next
 allowed-tools: mcp__flux__*
 ---
 
-# Flux Status
+# Kenzo Status (`/flux-status`)
 
-Show the current state of your Flux board and suggest what to work on next.
+Show the current state of your Kenzo board and suggest what to work on next.
 
 ## Instructions
 

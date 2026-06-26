@@ -11,7 +11,7 @@ interface ThemeContextValue {
 
 const ThemeContext = createContext<ThemeContextValue | null>(null)
 
-const THEME_STORAGE_KEY = 'flux-theme'
+const THEME_STORAGE_KEY = 'kenzo-theme'
 
 function getInitialTheme(): Theme {
   if (typeof window === 'undefined') return 'light'

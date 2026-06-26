@@ -29,9 +29,11 @@ export function ConfirmModal({
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={title}>
       {description && (
-        <p class="text-sm text-base-content/70">{description}</p>
+        <div class="rounded-lg border border-base-200 bg-base-200/40 p-4">
+          <p class="text-sm leading-6 text-base-content/70">{description}</p>
+        </div>
       )}
-      <div class="modal-action">
+      <div class="modal-action border-t border-base-200 pt-4">
         <button type="button" class="btn btn-ghost" onClick={onClose}>
           {cancelLabel}
         </button>

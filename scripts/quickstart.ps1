@@ -7,19 +7,19 @@ if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
 
 $Image = "sirsjg/flux-mcp:latest"
 
-Write-Host "Pulling Flux image..."
+Write-Host "Pulling Kenzo image (powered by the Flux engine)..."
 docker pull $Image
 
-Write-Host "Starting Flux web/API..."
+Write-Host "Starting Kenzo web/API..."
 if (docker ps -a --format '{{.Names}}' | Select-String -Quiet '^flux-web$') {
   docker rm -f flux-web | Out-Null
 }
 docker run -d -p 3000:3000 -v flux-data:/app/packages/data -e FLUX_DATA=/app/packages/data/flux.sqlite --name flux-web $Image bun packages/server/dist/index.js
 
 Write-Host ""
-Write-Host "Flux web UI is running: http://localhost:3000"
+Write-Host "Kenzo is running: http://localhost:3000"
 Write-Host ""
-Write-Host "Starting MCP server (Claude/Codex)..."
+Write-Host "Starting MCP server for Claude/Codex..."
 Write-Host "Press Ctrl+C to stop the MCP server"
 Write-Host ""
-docker run -i --rm -v flux-data:/app/packages/data $Image
+docker run -i --rm -v flux-data:/app/packages/data -e FLUX_DATA=/app/packages/data/flux.sqlite $Image bun packages/mcp/dist/index.js

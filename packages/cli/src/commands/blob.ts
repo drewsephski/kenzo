@@ -55,7 +55,7 @@ export async function blobCommand(
       const taskId = args[0];
       const filePath = args[1];
       if (!taskId || !filePath) {
-        console.error('Usage: flux blob attach <task-id> <file-path>');
+        console.error('Usage: kenzoboard blob attach <task-id> <file-path>');
         process.exit(1);
       }
       if (!existsSync(filePath)) {
@@ -79,7 +79,7 @@ export async function blobCommand(
       const blobId = args[0];
       const outputPath = args[1];
       if (!blobId) {
-        console.error('Usage: flux blob get <blob-id> [output-path]');
+        console.error('Usage: kenzoboard blob get <blob-id> [output-path]');
         process.exit(1);
       }
       const result = await downloadBlob(blobId);
@@ -116,7 +116,7 @@ export async function blobCommand(
     case 'delete': {
       const blobId = args[0];
       if (!blobId) {
-        console.error('Usage: flux blob delete <blob-id>');
+        console.error('Usage: kenzoboard blob delete <blob-id>');
         process.exit(1);
       }
       const success = await deleteBlobClient(blobId);
@@ -133,12 +133,12 @@ export async function blobCommand(
     }
 
     default:
-      console.log(`Usage: flux blob <attach|get|list|delete>
+      console.log(`Usage: kenzoboard blob <attach|get|list|delete>
 
-  flux blob attach <task-id> <file-path>   Attach a file to a task
-  flux blob get <blob-id> [output-path]    Download blob to file
-  flux blob list [--task <id>]             List blobs
-  flux blob delete <blob-id>               Delete a blob`);
+  kenzoboard blob attach <task-id> <file-path>   Attach a file to a task
+  kenzoboard blob get <blob-id> [output-path]    Download blob to file
+  kenzoboard blob list [--task <id>]             List blobs
+  kenzoboard blob delete <blob-id>               Delete a blob`);
       break;
   }
 }

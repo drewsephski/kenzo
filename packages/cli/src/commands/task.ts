@@ -37,7 +37,7 @@ export async function taskCommand(
     case 'list': {
       const projectId = args[0] || defaultProject;
       if (!projectId) {
-        console.error('Usage: flux task list [project] [--epic] [--status]');
+        console.error('Usage: kenzoboard task list [project] [--epic] [--status]');
         console.error('Tip: Set default project with: flux project use <id>');
         process.exit(1);
       }
@@ -89,7 +89,7 @@ export async function taskCommand(
         title = args[1];
       }
       if (!projectId || !title) {
-        console.error('Usage: flux task create [project] <title> [-P priority] [-e epic] [-d|--depends id,...] [--note] [--ac ...] [--guardrail ...]');
+        console.error('Usage: kenzoboard task create [project] <title> [-P priority] [-e epic] [-d|--depends id,...] [--note] [--ac ...] [--guardrail ...]');
         console.error('Tip: Set default project with: flux project use <id>');
         process.exit(1);
       }
@@ -130,7 +130,7 @@ export async function taskCommand(
     case 'update': {
       const id = args[0];
       if (!id) {
-        console.error('Usage: flux task update <id> [--title] [--status] [--note] [--epic] [-d|--depends id,...] [--blocked "reason"|clear] [--ac ...] [--guardrail ...] [--clear-ac] [--clear-guardrails]');
+        console.error('Usage: kenzoboard task update <id> [--title] [--status] [--note] [--epic] [-d|--depends id,...] [--blocked "reason"|clear] [--ac ...] [--guardrail ...] [--clear-ac] [--clear-guardrails]');
         process.exit(1);
       }
 
@@ -203,7 +203,7 @@ export async function taskCommand(
     case 'delete': {
       const id = args[0];
       if (!id) {
-        console.error('Usage: flux task delete <id>');
+        console.error('Usage: kenzoboard task delete <id>');
         process.exit(1);
       }
       const task = await getTask(id);
@@ -219,7 +219,7 @@ export async function taskCommand(
     case 'done': {
       const id = args[0];
       if (!id) {
-        console.error('Usage: flux task done <id> [--note]');
+        console.error('Usage: kenzoboard task done <id> [--note]');
         process.exit(1);
       }
 
@@ -240,7 +240,7 @@ export async function taskCommand(
     case 'start': {
       const id = args[0];
       if (!id) {
-        console.error('Usage: flux task start <id>');
+        console.error('Usage: kenzoboard task start <id>');
         process.exit(1);
       }
 
@@ -262,7 +262,7 @@ export async function taskCommand(
     }
 
     default:
-      console.error('Usage: flux task [list|create|update|delete|done|start]');
+      console.error('Usage: kenzoboard task [list|create|update|delete|done|start]');
       process.exit(1);
   }
 }

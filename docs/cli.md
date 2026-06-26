@@ -1,18 +1,19 @@
 # CLI Reference
 
-The Flux CLI provides full task management from the terminal, with MCP parity.
+The Kenzo CLI (`kenzoboard`) provides terminal control for Kenzo boards, with MCP parity through the Flux engine. Advanced users can still use the compatible `flux` command.
 
 ## Installation
 
 ```bash
-# npm (recommended)
-npm install -g flux-tasks
+# npm / npx (recommended)
+npx kenzoboard
+npm install -g kenzoboard
 
 # From source
 cd packages/cli && bun run build && bun link
 
-# Via Docker
-docker run -it --rm -v flux-data:/app/packages/data -e FLUX_DATA=/app/packages/data/flux.sqlite flux-mcp flux
+# Docker runs the Kenzo web/API and MCP services
+docker run -d -p 3000:3000 -v flux-data:/app/packages/data -e FLUX_DATA=/app/packages/data/flux.sqlite flux-mcp
 ```
 
 ## Storage Modes
@@ -21,28 +22,28 @@ The CLI supports three storage modes:
 
 ### Local File (default)
 ```bash
-flux init           # Creates .flux/data.json
-flux project list   # Uses local data
+kenzoboard init           # Creates .flux/data.json
+kenzoboard project list   # Uses local data
 ```
 
 ### SQLite (via FLUX_DATA)
 ```bash
-FLUX_DATA=.flux/data.sqlite flux project list
+FLUX_DATA=.flux/data.sqlite kenzoboard project list
 ```
 
 ### Server/Hosted API
-Connect to any Flux server (local or remote):
+Connect to any Kenzo/Flux server (local or remote):
 
 ```bash
-# Connect to hosted instance (with API key for writes)
-flux init --server https://flux.example.com --api-key '$FLUX_API_KEY'
+# Connect to hosted Kenzo instance (with API key for writes)
+kenzoboard init --server https://flux.example.com --api-key '$FLUX_API_KEY'
 
 # Or local server (no auth needed in dev mode)
-flux init --server http://localhost:3000
+kenzoboard init --server http://localhost:3000
 
 # All commands now use the API
-flux project list   # → GET /api/projects
-flux task create proj_abc "New task"  # → POST /api/projects/proj_abc/tasks
+kenzoboard project list   # -> GET /api/projects
+kenzoboard task create proj_abc "New task"  # -> POST /api/projects/proj_abc/tasks
 ```
 
 Server mode stores the URL in `.flux/config.json`. The CLI works identically regardless of mode - all commands are transparently routed to the configured backend.
@@ -60,12 +61,13 @@ Config supports `$ENV_VAR` expansion for secrets:
 ### Initialization
 
 ```bash
-flux init                    # Interactive setup (JSON storage)
-flux init --sqlite           # Use SQLite storage
-flux init --server URL       # Connect to server
-flux init --server URL --api-key KEY  # Server with auth (KEY can be $ENV_VAR)
-flux init --git              # Use git sync (default)
-flux init --no-agents        # Skip AGENTS.md update
+kenzoboard                  # Create/open local workspace and start app
+kenzoboard init             # Interactive setup (JSON storage)
+kenzoboard init --sqlite    # Use SQLite storage
+kenzoboard init --server URL       # Connect to server
+kenzoboard init --server URL --api-key KEY  # Server with auth (KEY can be $ENV_VAR)
+kenzoboard init --git       # Use git sync (default)
+kenzoboard init --no-agents # Skip AGENTS.md update
 ```
 
 Config is stored in `.flux/config.json` and can be committed to share with your team.
@@ -73,81 +75,82 @@ Config is stored in `.flux/config.json` and can be committed to share with your 
 ### Projects
 
 ```bash
-flux project list                        # List all projects
-flux project create <name>               # Create project
-flux project update <id> --name <n>      # Rename project
-flux project delete <id>                 # Delete project
+kenzoboard project list                        # List all projects
+kenzoboard project create <name>               # Create project
+kenzoboard project update <id> --name <n>      # Rename project
+kenzoboard project delete <id>                 # Delete project
 ```
 
 ### Epics
 
 ```bash
-flux epic list <project>                 # List epics in project
-flux epic create <project> <title>       # Create epic
-flux epic update <id> --title <t>        # Update epic
-flux epic update <id> --status done      # Change status
-flux epic delete <id>                    # Delete epic
+kenzoboard epic list <project>                 # List epics in project
+kenzoboard epic create <project> <title>       # Create epic
+kenzoboard epic update <id> --title <t>        # Update epic
+kenzoboard epic update <id> --status done      # Change status
+kenzoboard epic delete <id>                    # Delete epic
 ```
 
 ### Tasks
 
 ```bash
-flux task list <project>                 # List tasks
-flux task list <project> --epic <id>     # Filter by epic
-flux task list <project> --status todo   # Filter by status
+kenzoboard task list <project>                 # List tasks
+kenzoboard task list <project> --epic <id>     # Filter by epic
+kenzoboard task list <project> --status todo   # Filter by status
 
-flux task create <project> <title>       # Create task
-flux task create <project> <title> -e <epic> -P 0  # With epic and priority
+kenzoboard task create <project> <title>       # Create task
+kenzoboard task create <project> <title> -e <epic> -P 0  # With epic and priority
 
-flux task update <id> --title <t>        # Update title
-flux task update <id> --status in_progress
-flux task update <id> --epic <epic_id>   # Assign to epic
-flux task update <id> --note "context"   # Add note
+kenzoboard task update <id> --title <t>        # Update title
+kenzoboard task update <id> --status in_progress
+kenzoboard task update <id> --epic <epic_id>   # Assign to epic
+kenzoboard task update <id> --note "context"   # Add note
 
-flux task start <id>                     # Mark in_progress
-flux task done <id>                      # Mark done
-flux task done <id> --note "completed"   # Done with note
+kenzoboard task start <id>                     # Mark in_progress
+kenzoboard task done <id>                      # Mark done
+kenzoboard task done <id> --note "completed"   # Done with note
 
-flux task delete <id>                    # Delete task
+kenzoboard task delete <id>                    # Delete task
 ```
 
 ### Quick Commands
 
 ```bash
-flux ready                   # Show unblocked tasks sorted by priority
-flux ready --json            # JSON output
-flux show <id>               # Show task details with comments
+kenzoboard ready                   # Show unblocked tasks sorted by priority
+kenzoboard ready --json            # JSON output
+kenzoboard show <id>               # Show task details with comments
 ```
 
 ### Data Sync
 
 **Git-based sync** (for teams, JSON storage only):
 ```bash
-flux pull                    # Pull from flux-data branch
-flux push                    # Push to flux-data branch
-flux push "commit message"   # Push with custom message
+kenzoboard pull                    # Pull from flux-data branch
+kenzoboard push                    # Push to flux-data branch
+kenzoboard push "commit message"   # Push with custom message
 ```
 
 > **Note:** Git sync requires JSON storage. SQLite users should use export/import instead.
 
 **Export/Import**:
 ```bash
-flux export                  # Print JSON to stdout
-flux export -o backup.json   # Export to file
-flux import backup.json      # Import (replace)
-flux import backup.json --merge  # Import (merge)
-cat data.json | flux import -    # Import from stdin
+kenzoboard export                  # Print JSON to stdout
+kenzoboard export -o backup.json   # Export to file
+kenzoboard import backup.json      # Import (replace)
+kenzoboard import backup.json --merge  # Import (merge)
+cat data.json | kenzoboard import -    # Import from stdin
 ```
 
 ### Local Server
 
-Start a local Flux server with Web UI + API:
+Start a local Kenzo server with Web UI + API:
 
 ```bash
-flux serve                     # Uses config or defaults to .flux/data.json
-flux serve -p 8080             # Custom port
-flux serve --data path.json    # Override with JSON file
-flux serve --data path.sqlite  # Override with SQLite file
+kenzoboard dev                    # Start/open the local app on http://localhost:3000
+kenzoboard serve                  # Uses config or defaults to .flux/data.json
+kenzoboard serve -p 8080          # Custom port
+kenzoboard serve --data path.json # Override with JSON file
+kenzoboard serve --data path.sqlite  # Override with SQLite file
 ```
 
 Reads `.flux/config.json` to determine storage backend. Serves both the web dashboard and REST API.
@@ -173,19 +176,23 @@ Reads `.flux/config.json` to determine storage backend. Serves both the web dash
 
 ```bash
 # Quick workflow
-flux init
-flux project create "My Project"
-flux task create proj_abc "Fix login bug" -P 0
-flux task start task_xyz
-flux task done task_xyz --note "Fixed by adding null check"
+kenzoboard
+kenzoboard project create "My Project"
+kenzoboard task create proj_abc "Fix login bug" -P 0
+kenzoboard task start task_xyz
+kenzoboard task done task_xyz --note "Fixed by adding null check"
 
 # Agent workflow
-flux ready --json | jq '.[0]'  # Get next task
-flux task start task_123
-flux task done task_123
+kenzoboard ready --json | jq '.[0]'  # Get next task
+kenzoboard task start task_123
+kenzoboard task done task_123
 
 # Team sync
-flux pull
-flux task create proj_abc "New feature"
-flux push "added new feature task"
+kenzoboard pull
+kenzoboard task create proj_abc "New feature"
+kenzoboard push "added new feature task"
 ```
+
+## Flux Compatibility
+
+The `flux` bin is still published by the `kenzoboard` package. Existing commands such as `flux ready`, `flux task create ...`, `flux pull`, and `flux push` continue to work. `.flux/`, `flux-data`, and `flux://` remain engine-level compatibility names.

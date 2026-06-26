@@ -5,6 +5,7 @@ import { cors } from 'hono/cors';
 import { join, dirname, resolve, sep } from 'path';
 import { fileURLToPath } from 'url';
 import { existsSync, readFileSync, statSync } from 'fs';
+import { spawn } from 'child_process';
 import {
   setStorageAdapter,
   initStore,
@@ -36,6 +37,27 @@ import { createAdapter } from '@flux/shared/adapters';
 import { findFluxDir, readConfig } from '../config.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+
+type ServeOptions = {
+  defaultPort?: number;
+  open?: boolean;
+};
+
+function openBrowser(url: string): void {
+  const command = process.platform === 'darwin'
+    ? 'open'
+    : process.platform === 'win32'
+      ? 'cmd'
+      : 'xdg-open';
+  const args = process.platform === 'win32' ? ['/c', 'start', '', url] : [url];
+
+  try {
+    const child = spawn(command, args, { detached: true, stdio: 'ignore' });
+    child.unref();
+  } catch {
+    // Opening the browser is best-effort; the printed URL is the source of truth.
+  }
+}
 
 function createApp() {
   const app = new Hono();
@@ -177,10 +199,11 @@ async function findAvailablePort(startPort: number, maxAttempts = 10): Promise<n
 
 export async function serveCommand(
   args: string[],
-  flags: Record<string, string | boolean>
+  flags: Record<string, string | boolean>,
+  options: ServeOptions = {}
 ): Promise<void> {
-  // Default port 3589 = "FLUX" on phone keypad (F=3, L=5, U=8, X=9)
-  const requestedPort = parseInt(flags.port as string || flags.p as string || '3589', 10);
+  const defaultPort = options.defaultPort ?? 3589;
+  const requestedPort = parseInt(flags.port as string || flags.p as string || String(defaultPort), 10);
 
   // Resolve data file: --data flag > config.dataFile > default
   const fluxDir = findFluxDir();
@@ -262,12 +285,17 @@ export async function serveCommand(
     app.get('/', (c) => c.text('Web UI not found. API available at /api/*'));
   }
 
-  console.log(`Starting server on http://localhost:${port}`);
+  const url = `http://localhost:${port}`;
+  console.log(`Starting Kenzo on ${url}`);
   console.log(`Data file: ${dataFile}`);
   if (webDistPath) {
     console.log(`Web UI: ${webDistPath}`);
   } else {
     console.log('Web UI: not found (API only mode)');
+  }
+  if (options.open || flags.open === true) {
+    console.log(`Opening ${url}`);
+    openBrowser(url);
   }
   console.log('');
   console.log('Press Ctrl+C to stop');

@@ -83,7 +83,7 @@ initStore();
 const blobsDir = join(fluxDir, 'blobs');
 setBlobStorage(createFilesystemBlobStorage(blobsDir));
 
-console.log(`Flux server using: ${DATA_FILE}`);
+console.log(`Kenzo server using Flux data: ${DATA_FILE}`);
 
 // Set up webhook event handler
 setWebhookEventHandler(handleWebhookEvent);
@@ -835,7 +835,7 @@ if (existsSync(webDistPath)) {
 
 // Start server
 const port = parseInt(process.env.PORT || '3000');
-console.log(`Flux server running at http://localhost:${port}`);
+console.log(`Kenzo server running at http://localhost:${port}`);
 
 serve({
   fetch: app.fetch,

@@ -12,8 +12,10 @@ import {
   updateProject,
   type ProjectWithStats,
 } from "../stores";
-import { ConfirmModal, Modal, ThemeToggle } from "../components";
+import { BrandMark, ConfirmModal, Modal, ThemeToggle } from "../components";
 import { WebhooksPanel } from "../components/WebhooksPanel";
+import { APP_NAME } from "../brand";
+import { API_BASE, EVENTS_URL } from "../config";
 
 export function ProjectList(_props: RoutableProps) {
   const [projects, setProjects] = useState<ProjectWithStats[]>([]);
@@ -50,8 +52,7 @@ export function ProjectList(_props: RoutableProps) {
       return;
     }
     setSseStatus("unknown");
-    const eventsBase = import.meta.env.DEV ? "http://localhost:3000" : "";
-    const source = new EventSource(`${eventsBase}/api/events`);
+    const source = new EventSource(EVENTS_URL);
     let connected = false;
     const timeoutId = window.setTimeout(() => {
       if (!connected) setSseStatus("offline");
@@ -159,14 +160,8 @@ export function ProjectList(_props: RoutableProps) {
     }
   };
 
-  const apiOrigin =
-    typeof window === "undefined" ? "" : window.location.origin;
-  const apiLocation = import.meta.env.DEV
-    ? "http://localhost:3000/api"
-    : `${apiOrigin}/api`;
-  const sseLocation = import.meta.env.DEV
-    ? "http://localhost:3000/api/events"
-    : `${apiOrigin}/api/events`;
+  const apiLocation = API_BASE;
+  const sseLocation = EVENTS_URL;
 
   const statusLabel = (status: "online" | "offline" | "unknown") => {
     if (status === "online") return "Online";
@@ -210,7 +205,9 @@ export function ProjectList(_props: RoutableProps) {
     <div class="min-h-screen bg-base-200">
       <div class="navbar bg-base-100 shadow-lg">
         <div class="flex-1">
-          <span class="text-xl font-bold px-4">Flux</span>
+          <button type="button" class="btn btn-ghost px-4" onClick={() => route("/")}>
+            <BrandMark />
+          </button>
         </div>
         <div class="flex-none flex items-center gap-2">
           <button
@@ -323,7 +320,7 @@ export function ProjectList(_props: RoutableProps) {
                 <div>
                   <h4 class="text-lg font-semibold">Configuration</h4>
                   <p class="text-sm text-base-content/60">
-                    Read-only diagnostics for your Flux instance.
+                    Read-only diagnostics for your {APP_NAME} instance.
                   </p>
                 </div>
                 <div class="space-y-3">
@@ -348,7 +345,7 @@ export function ProjectList(_props: RoutableProps) {
                       )}`}
                     ></span>
                     <div>
-                      <div class="text-sm font-medium">API Status</div>
+                      <div class="text-sm font-medium">Connection</div>
                       <div class="text-xs text-base-content/60">
                         {statusLabel(apiStatus)}
                       </div>
@@ -361,7 +358,7 @@ export function ProjectList(_props: RoutableProps) {
                       )}`}
                     ></span>
                     <div>
-                      <div class="text-sm font-medium">SSE Updates</div>
+                      <div class="text-sm font-medium">Live updates</div>
                       <div class="text-xs text-base-content/60">
                         {statusLabel(sseStatus)}
                       </div>
@@ -382,7 +379,7 @@ export function ProjectList(_props: RoutableProps) {
                 <div>
                   <h4 class="text-lg font-semibold">Reset Database</h4>
                   <p class="text-sm text-base-content/60">
-                    This will wipe all projects, tasks, epics, and webhooks.
+                    This will wipe all projects, tasks, workstreams, and webhooks.
                   </p>
                 </div>
                 <div class="alert alert-warning">
@@ -477,7 +474,7 @@ export function ProjectList(_props: RoutableProps) {
       <ConfirmModal
         isOpen={resetConfirmOpen}
         title="Reset Database?"
-        description="This will wipe all projects, tasks, epics, and webhooks. This action cannot be undone."
+        description="This will wipe all projects, tasks, workstreams, and webhooks. This action cannot be undone."
         confirmLabel="Reset"
         confirmClassName="btn-error"
         onConfirm={handleReset}
@@ -490,7 +487,7 @@ export function ProjectList(_props: RoutableProps) {
       <ConfirmModal
         isOpen={deleteConfirmOpen}
         title="Delete Project?"
-        description="This will permanently delete the project and ALL its epics and tasks. This action cannot be undone."
+        description="This will permanently delete the project and all its workstreams and tasks. This action cannot be undone."
         confirmLabel="Delete"
         confirmClassName="btn-error"
         onConfirm={handleDeleteConfirmed}

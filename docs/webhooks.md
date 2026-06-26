@@ -1,6 +1,6 @@
 # Webhooks
 
-Webhooks allow Flux to push real-time notifications to external services when events occur. This makes Flux a great control center for automations like notifying Slack, creating GitHub issues, updating CI status, or triggering other workflows whenever work moves on the board.
+Webhooks allow Kenzo to push real-time notifications to external services when events occur. The webhook headers retain the `Flux` prefix because they come from the underlying Flux engine.
 
 ## Managing Webhooks
 
@@ -28,7 +28,7 @@ Webhooks allow Flux to push real-time notifications to external services when ev
 
 ## Webhook Payload
 
-When an event occurs, Flux sends a POST request to your webhook URL with this JSON structure:
+When an event occurs, Kenzo sends a POST request to your webhook URL with this JSON structure:
 
 ```json
 {
@@ -67,7 +67,7 @@ Each webhook request includes these headers:
 
 ## Signature Verification
 
-If you configure a secret for your webhook, Flux will include an `X-Flux-Signature` header with each request. The signature is computed as:
+If you configure a secret for your webhook, Kenzo will include an `X-Flux-Signature` header with each request. The signature is computed as:
 
 ```
 sha256=HMAC-SHA256(secret, request_body)
@@ -92,7 +92,7 @@ function verifySignature(payload, signature, secret) {
 
 ## Retry Behavior
 
-If a webhook delivery fails (non-2xx response or network error), Flux will retry up to 3 times with exponential backoff:
+If a webhook delivery fails (non-2xx response or network error), Kenzo will retry up to 3 times with exponential backoff:
 - 1st retry: after 1 second
 - 2nd retry: after 5 seconds
 - 3rd retry: after 30 seconds
@@ -102,7 +102,7 @@ If a webhook delivery fails (non-2xx response or network error), Flux will retry
 Create a webhook to post task updates to Slack:
 
 1. Create a Slack Incoming Webhook at https://api.slack.com/messaging/webhooks
-2. In Flux, create a webhook with:
+2. In Kenzo, create a webhook with:
    - URL: Your Slack webhook URL
    - Events: `task.status_changed`
 3. Create a simple proxy/transformer service, or use Slack Workflow Builder to format the message

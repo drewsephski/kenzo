@@ -1,6 +1,6 @@
 ## Claude Code Plugin
 
-Flux includes a plugin for [Claude Code](https://claude.ai/code) that lets you generate epics and tasks directly from your project requirements.
+Kenzo includes a Flux-powered plugin for [Claude Code](https://claude.ai/code) that lets you generate epics and tasks directly from your project requirements. Command names still use `/flux-*` for compatibility.
 
 ### Installation
 ```bash
@@ -28,4 +28,4 @@ In any project with a README or requirements doc:
 /flux-generate
 ```
 
-Claude will read your project documentation, create a Flux project, break it down into epics and tasks, and set up dependencies automatically.
+Claude will read your project documentation, create a Kenzo project, break it down into epics and tasks, and set up dependencies automatically.

@@ -1,5 +1,7 @@
 # API Endpoints
 
+The API serves Kenzo boards and uses the existing Flux environment variable names for compatibility.
+
 ## Authentication
 
 The API uses Bearer token authentication via `FLUX_API_KEY` environment variable.

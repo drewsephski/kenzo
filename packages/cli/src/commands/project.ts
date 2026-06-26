@@ -45,7 +45,7 @@ export async function projectCommand(
     case 'use': {
       const id = args[0];
       if (!id) {
-        console.error('Usage: flux project use <id>');
+        console.error('Usage: kenzoboard project use <id>');
         process.exit(1);
       }
       const project = await getProject(id);
@@ -64,7 +64,7 @@ export async function projectCommand(
     case 'create': {
       const name = args[0];
       if (!name) {
-        console.error('Usage: flux project create <name> [--private]');
+        console.error('Usage: kenzoboard project create <name> [--private]');
         process.exit(1);
       }
       const desc = flags.desc as string | undefined;
@@ -78,7 +78,7 @@ export async function projectCommand(
     case 'update': {
       const id = args[0];
       if (!id) {
-        console.error('Usage: flux project update <id> [--name] [--desc] [--private|--public]');
+        console.error('Usage: kenzoboard project update <id> [--name] [--desc] [--private|--public]');
         process.exit(1);
       }
       const updates: { name?: string; description?: string; visibility?: 'public' | 'private' } = {};
@@ -98,7 +98,7 @@ export async function projectCommand(
     case 'delete': {
       const id = args[0];
       if (!id) {
-        console.error('Usage: flux project delete <id>');
+        console.error('Usage: kenzoboard project delete <id>');
         process.exit(1);
       }
       const project = await getProject(id);
@@ -112,7 +112,7 @@ export async function projectCommand(
     }
 
     default:
-      console.error('Usage: flux project [list|create|update|delete|use]');
+      console.error('Usage: kenzoboard project [list|create|update|delete|use]');
       process.exit(1);
   }
 }

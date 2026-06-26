@@ -20,6 +20,7 @@ import {
 } from '../stores/api'
 import { ConfirmModal } from './ConfirmModal'
 import { Modal } from './Modal'
+import { APP_NAME } from '../brand'
 
 export function WebhooksPanel() {
   const [webhooks, setWebhooks] = useState<Webhook[]>([])
@@ -179,7 +180,7 @@ export function WebhooksPanel() {
           <div class="card-body text-center py-10">
             <h2 class="text-lg font-semibold mb-2">No webhooks configured</h2>
             <p class="text-base-content/60 mb-4">
-              Webhooks let you send notifications to external services when events occur in Flux.
+              Webhooks let you send notifications to external services when events occur in {APP_NAME}.
             </p>
             <button class="btn btn-primary" onClick={openCreateForm}>
               Create your first webhook

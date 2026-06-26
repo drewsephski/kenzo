@@ -1,9 +1,10 @@
 {
-  "name": "flux-tasks",
+  "name": "kenzoboard",
   "version": "0.1.1",
-  "description": "CLI for Flux task management - Kanban for AI agents",
+  "description": "Kenzo board for human-led AI work, powered by the Flux engine",
   "type": "module",
   "bin": {
+    "kenzoboard": "./dist/index.js",
     "flux": "./dist/index.js"
   },
   "scripts": {

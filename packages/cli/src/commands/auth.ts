@@ -52,7 +52,7 @@ export async function authCommand(
 ): Promise<void> {
   if (!isServerMode()) {
     console.error('Auth commands only available in server mode');
-    console.error('Run: flux init --server URL');
+    console.error('Run: kenzoboard init --server URL');
     process.exit(1);
   }
 
@@ -66,7 +66,7 @@ export async function authCommand(
         process.exit(1);
       }
 
-      console.log(`${c.bold}Flux Authentication${c.reset}\n`);
+      console.log(`${c.bold}Kenzo Authentication${c.reset} ${c.dim}(Flux engine)${c.reset}\n`);
       console.log('Starting browser auth flow...\n');
 
       // Get temp token from server
@@ -117,7 +117,7 @@ export async function authCommand(
       // Create API key directly (requires existing auth)
       const name = flags.name as string || args[0];
       if (!name) {
-        console.error('Usage: flux auth create-key --name "Key Name" [-p PROJECT_ID]');
+        console.error('Usage: kenzoboard auth create-key --name "Key Name" [-p PROJECT_ID]');
         process.exit(1);
       }
 
@@ -176,7 +176,7 @@ export async function authCommand(
     case 'revoke': {
       const id = args[0];
       if (!id) {
-        console.error('Usage: flux auth revoke <key-id>');
+        console.error('Usage: kenzoboard auth revoke <key-id>');
         process.exit(1);
       }
       const success = await deleteApiKeyRemote(id);
@@ -203,7 +203,7 @@ export async function authCommand(
             output({ authenticated: false }, true);
           } else {
             console.log(`${c.yellow}!${c.reset} Not authenticated or insufficient permissions`);
-            console.log(`  Run ${c.cyan}flux auth${c.reset} to authenticate`);
+            console.log(`  Run ${c.cyan}kenzoboard auth${c.reset} to authenticate`);
           }
         } else {
           throw e;
@@ -213,7 +213,7 @@ export async function authCommand(
     }
 
     default:
-      console.error('Usage: flux auth [login|create-key|list-keys|revoke|status]');
+      console.error('Usage: kenzoboard auth [login|create-key|list-keys|revoke|status]');
       process.exit(1);
   }
 }

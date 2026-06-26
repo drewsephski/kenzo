@@ -68,7 +68,7 @@ const apiKey = process.env.FLUX_API_KEY || config.apiKey;
 if (serverUrl) {
   // Remote server mode
   initClient(serverUrl, apiKey);
-  console.error(`Flux MCP using remote server: ${serverUrl}`);
+  console.error(`Flux MCP for Kenzo using remote server: ${serverUrl}`);
 } else {
   // Local storage mode - respect config.dataFile (e.g., data.sqlite)
   const dataPath = resolveDataPath(fluxDir, config);
@@ -81,7 +81,7 @@ if (serverUrl) {
   const blobsDir = join(fluxDir, 'blobs');
   setBlobStorage(createFilesystemBlobStorage(blobsDir));
 
-  console.error(`Flux MCP using local storage: ${dataPath}`);
+  console.error(`Flux MCP for Kenzo using local storage: ${dataPath}`);
 }
 
 // Create MCP server
@@ -106,7 +106,7 @@ server.setRequestHandler(ListResourcesRequestSchema, async () => {
     {
       uri: 'flux://projects',
       name: 'All Projects',
-      description: 'List of all Flux projects',
+      description: 'List of all Kenzo projects',
       mimeType: 'application/json',
     },
   ];
@@ -224,7 +224,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       // Project tools
       {
         name: 'list_projects',
-        description: 'List all Flux projects with their stats',
+        description: 'List all Kenzo projects with their stats',
         inputSchema: {
           type: 'object',
           properties: {},
@@ -232,7 +232,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       },
       {
         name: 'create_project',
-        description: 'Create a new Flux project',
+        description: 'Create a new Kenzo project',
         inputSchema: {
           type: 'object',
           properties: {
@@ -1058,12 +1058,12 @@ async function main() {
       },
     });
 
-    console.error(`Flux MCP server running on http://localhost:${httpServer.port}/mcp`);
+    console.error(`Flux MCP server for Kenzo running on http://localhost:${httpServer.port}/mcp`);
   } else {
     // Default stdio mode
     const transport = new StdioServerTransport();
     await server.connect(transport);
-    console.error('Flux MCP server running on stdio');
+    console.error('Flux MCP server for Kenzo running on stdio');
   }
 }
 

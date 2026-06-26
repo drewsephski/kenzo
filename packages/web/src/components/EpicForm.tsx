@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'preact/hooks'
+import { InformationCircleIcon } from '@heroicons/react/24/outline'
 import { ConfirmModal } from './ConfirmModal'
 import { Modal } from './Modal'
 import { createEpic, updateEpic, deleteEpic, getEpics } from '../stores'
@@ -103,78 +104,108 @@ export function EpicForm({ isOpen, onClose, onSave, epic, projectId }: EpicFormP
 
   return (
     <>
-      <Modal isOpen={isOpen} onClose={onClose} title={isEdit ? 'Edit Epic' : 'New Epic'}>
-        <form onSubmit={handleSubmit}>
-        <div class="form-control mb-4">
-          <label class="label">
-            <span class="label-text">Title *</span>
-          </label>
-          <input
-            type="text"
-            placeholder="Epic title"
-            class="input input-bordered w-full"
-            value={title}
-            onInput={(e) => setTitle((e.target as HTMLInputElement).value)}
-            required
-          />
-        </div>
-
-        <div class="form-control mb-4">
-          <label class="label">
-            <span class="label-text">Notes</span>
-          </label>
-          <textarea
-            placeholder="Optional notes..."
-            class="textarea textarea-bordered w-full"
-            value={notes}
-            onInput={(e) => setNotes((e.target as HTMLTextAreaElement).value)}
-            rows={3}
-          />
-        </div>
-
-        <div class="form-control mb-4">
-          <label class="label">
-            <span class="label-text">Status</span>
-          </label>
-          <select
-            class="select select-bordered w-full"
-            value={status}
-            onChange={(e) => setStatus((e.target as HTMLSelectElement).value)}
-          >
-            {STATUSES.map(s => (
-              <option key={s} value={s}>{STATUS_CONFIG[s].label}</option>
-            ))}
-          </select>
-        </div>
-
-        <div class="form-control mb-6">
-          <label class="label">
-            <span class="label-text">Dependencies</span>
-            {dependsOn.length > 0 && (
-              <span class="label-text-alt">{dependsOn.length} selected</span>
-            )}
-          </label>
-          {availableEpics.length === 0 ? (
-            <p class="text-sm text-base-content/50">No other epics available</p>
-          ) : (
-            <div class="border border-base-300 rounded-lg max-h-32 overflow-y-auto">
-              {availableEpics.map(e => (
-                <label key={e.id} class="flex items-center gap-2 px-3 py-2 hover:bg-base-200 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    class="checkbox checkbox-sm"
-                    checked={dependsOn.includes(e.id)}
-                    onChange={() => toggleDependency(e.id)}
-                  />
-                  <span class="text-sm truncate flex-1">{e.title}</span>
-                  <span class="badge badge-ghost badge-xs">{STATUS_CONFIG[e.status as Status]?.label || e.status}</span>
-                </label>
-              ))}
+      <Modal isOpen={isOpen} onClose={onClose} title={isEdit ? 'Edit Workstream' : 'New Workstream'}>
+        <form onSubmit={handleSubmit} class="space-y-5">
+        <section class="space-y-4 rounded-lg border border-base-200 bg-base-200/30 p-4">
+          <div>
+            <div class="relative flex items-center gap-2">
+              <h4 class="text-sm font-semibold text-base-content">Workstream details</h4>
+              <div class="group inline-flex">
+                <button
+                  type="button"
+                  class="btn btn-ghost btn-xs btn-circle text-base-content/55 hover:text-base-content focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                  aria-label="A workstream groups related tasks toward one outcome. Tasks are the individual cards inside it."
+                  aria-describedby="workstream-help-tooltip"
+                >
+                  <InformationCircleIcon className="h-4 w-4" aria-hidden="true" />
+                </button>
+                <span
+                  id="workstream-help-tooltip"
+                  role="tooltip"
+                  class="pointer-events-none absolute left-0 top-full z-20 mt-2 hidden w-72 max-w-[calc(100vw-4rem)] rounded-lg border border-base-300 bg-base-100 px-3 py-2 text-xs font-normal leading-5 text-base-content shadow-xl group-hover:block group-focus-within:block"
+                >
+                  A workstream is a larger lane or phase that groups related tasks toward one outcome. Tasks are the individual cards you move and complete inside a workstream.
+                </span>
+              </div>
             </div>
-          )}
-        </div>
+            <p class="mt-1 text-xs text-base-content/55">
+              Group related tasks into a larger outcome, phase, or parallel area of work.
+            </p>
+          </div>
 
-        <div class="modal-action">
+          <div class="form-control">
+            <label class="label">
+              <span class="label-text">Title *</span>
+            </label>
+            <input
+              type="text"
+              placeholder="Workstream title"
+              class="input input-bordered w-full"
+              value={title}
+              onInput={(e) => setTitle((e.target as HTMLInputElement).value)}
+              required
+            />
+          </div>
+
+          <div class="form-control">
+            <label class="label">
+              <span class="label-text">Notes</span>
+            </label>
+            <textarea
+              placeholder="Optional notes..."
+              class="textarea textarea-bordered w-full"
+              value={notes}
+              onInput={(e) => setNotes((e.target as HTMLTextAreaElement).value)}
+              rows={3}
+            />
+          </div>
+
+          <div class="form-control">
+            <label class="label">
+              <span class="label-text">Status</span>
+            </label>
+            <select
+              class="select select-bordered w-full"
+              value={status}
+              onChange={(e) => setStatus((e.target as HTMLSelectElement).value)}
+            >
+              {STATUSES.map(s => (
+                <option key={s} value={s}>{STATUS_CONFIG[s].label}</option>
+              ))}
+            </select>
+          </div>
+        </section>
+
+        <section class="rounded-lg border border-base-200 bg-base-200/30 p-4">
+          <div class="form-control">
+            <label class="label">
+                <span class="label-text">Waiting on other workstreams</span>
+              {dependsOn.length > 0 && (
+                <span class="label-text-alt">{dependsOn.length} selected</span>
+              )}
+            </label>
+            {availableEpics.length === 0 ? (
+              <p class="text-sm text-base-content/50">No other workstreams to wait on</p>
+            ) : (
+              <div class="max-h-40 overflow-y-auto rounded-lg border border-base-300">
+                {availableEpics.map(e => (
+                  <label key={e.id} class="flex items-center gap-2 px-3 py-2 hover:bg-base-200 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      class="checkbox checkbox-sm"
+                      checked={dependsOn.includes(e.id)}
+                      onChange={() => toggleDependency(e.id)}
+                    />
+                    <span class="text-sm truncate flex-1">{e.title}</span>
+                    <span class="badge badge-ghost badge-xs">{STATUS_CONFIG[e.status as Status]?.label || e.status}</span>
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+
+        <div class="modal-action border-t border-base-200 pt-4">
           {isEdit && (
             <button type="button" class="btn btn-error btn-outline" onClick={handleDelete} disabled={submitting}>
               Delete
@@ -191,8 +222,8 @@ export function EpicForm({ isOpen, onClose, onSave, epic, projectId }: EpicFormP
       </Modal>
       <ConfirmModal
         isOpen={deleteConfirmOpen}
-        title="Delete Epic?"
-        description="Tasks in this epic will be moved to Unassigned."
+        title="Delete Workstream?"
+        description="Tasks in this workstream will move to No workstream."
         confirmLabel="Delete"
         confirmClassName="btn-error"
         onConfirm={handleDeleteConfirmed}

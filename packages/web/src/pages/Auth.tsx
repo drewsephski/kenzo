@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'preact/hooks'
 import { route, RoutableProps } from 'preact-router'
 import { completeCliAuth, getAuthStatus, getProjects, type ProjectWithStats } from '../stores/api'
 import { setToken, clearToken } from '../stores/auth'
+import { CLI_LABEL } from '../brand'
 
 interface AuthProps extends RoutableProps {
   token?: string
@@ -228,7 +229,7 @@ export function Auth({ token: urlToken }: AuthProps) {
         <div class="card-body">
           <h2 class="card-title text-2xl mb-4">Authorize CLI</h2>
           <p class="text-sm opacity-70 mb-4">
-            Create an API key for the Flux CLI.
+            Create an API key for the {CLI_LABEL}.
           </p>
 
           {error && (

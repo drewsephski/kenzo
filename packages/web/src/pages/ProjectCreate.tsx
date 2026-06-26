@@ -46,7 +46,7 @@ export function ProjectCreate(_props: RoutableProps) {
               />
             </div>
             <div class="card-actions justify-end">
-              <button type="button" class="btn btn-ghost" onClick={() => route('/')}>
+              <button type="button" class="btn btn-ghost" onClick={() => route('/projects')}>
                 Cancel
               </button>
               <button type="submit" class="btn btn-primary" disabled={!name.trim() || submitting}>

@@ -1,4 +1,4 @@
-# Flux - Kanban Board with MCP Server
+# Kenzo - Kanban Board with Flux MCP Server
 # Multi-stage build using Bun
 
 FROM oven/bun:1.3.5 AS base
