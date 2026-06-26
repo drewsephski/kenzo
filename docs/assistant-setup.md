@@ -2,6 +2,28 @@
 
 Ready to make Kenzo the shared board for your human and agent workflows? Kenzo is powered by the Flux engine, so MCP configs keep the `flux` server name and `flux://` resources for compatibility.
 
+MCP is the best default for Codex and Claude because it lets the agent read projects, pick ready tasks, add notes, and mark tasks done against the same board you see in the app. If MCP is not connected yet, agents can still use the CLI commands from `AGENTS.md`.
+
+## Codex
+
+From the repo that contains your `.flux` workspace:
+
+```bash
+codex mcp add flux --env FLUX_DIR="$(pwd)/.flux" -- npx -y --package kenzoboard kenzoboard-mcp
+```
+
+Then start a Codex session in the repo and ask:
+
+```text
+Use Kenzo to pick the next ready task, implement it, and mark it done.
+```
+
+If `codex` on your PATH is not OpenAI Codex, use the Codex Desktop CLI directly on macOS:
+
+```bash
+/Applications/Codex.app/Contents/Resources/codex mcp add flux --env FLUX_DIR="$(pwd)/.flux" -- npx -y --package kenzoboard kenzoboard-mcp
+```
+
 ## Claude Desktop
 
 ### npm / npx (recommended)
@@ -16,7 +38,10 @@ Add the Flux MCP server for Kenzo to your Claude Desktop configuration file:
   "mcpServers": {
     "flux": {
       "command": "npx",
-      "args": ["-y", "--package", "kenzoboard", "kenzoboard-mcp"]
+      "args": ["-y", "--package", "kenzoboard", "kenzoboard-mcp"],
+      "env": {
+        "FLUX_DIR": "/absolute/path/to/your/repo/.flux"
+      }
     }
   }
 }
@@ -60,6 +85,7 @@ If your ChatGPT client supports MCP servers, add the Flux MCP server for Kenzo a
 ```
 Command: npx
 Args: -y --package kenzoboard kenzoboard-mcp
+Env: FLUX_DIR=/absolute/path/to/your/repo/.flux
 ```
 
 ### Global install

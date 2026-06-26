@@ -42,6 +42,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 type ServeOptions = {
   defaultPort?: number;
   open?: boolean;
+  compact?: boolean;
 };
 
 function openBrowser(url: string): void {
@@ -288,15 +289,22 @@ export async function serveCommand(
   }
 
   const url = `http://localhost:${port}`;
-  console.log(`Starting Kenzo on ${url}`);
-  console.log(`Data file: ${dataFile}`);
-  if (webDistPath) {
-    console.log(`Web UI: ${webDistPath}`);
+  if (options.compact) {
+    console.log('');
+    console.log(`Kenzo is running at ${url}`);
   } else {
-    console.log('Web UI: not found (API only mode)');
+    console.log(`Starting Kenzo on ${url}`);
+    console.log(`Data file: ${dataFile}`);
+    if (webDistPath) {
+      console.log(`Web UI: ${webDistPath}`);
+    } else {
+      console.log('Web UI: not found (API only mode)');
+    }
   }
   if (options.open || flags.open === true) {
-    console.log(`Opening ${url}`);
+    if (!options.compact) {
+      console.log(`Opening ${url}`);
+    }
     openBrowser(url);
   }
   console.log('');

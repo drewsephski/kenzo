@@ -71,7 +71,7 @@ function defaultServePort(): number {
   return publicCommandName() === 'flux' ? 3589 : 3000;
 }
 
-function ensureFluxIgnored(): void {
+function ensureFluxIgnored(): boolean {
   const gitRoot = findGitRoot();
   const gitignorePath = gitRoot ? resolve(gitRoot, '.gitignore') : resolve(process.cwd(), '.gitignore');
   const gitignoreEntry = '.flux/';
@@ -79,22 +79,35 @@ function ensureFluxIgnored(): void {
   if (!gitignoreContent.split('\n').some(line => line.trim() === gitignoreEntry)) {
     const newline = gitignoreContent.length > 0 && !gitignoreContent.endsWith('\n') ? '\n' : '';
     appendFileSync(gitignorePath, `${newline}${gitignoreEntry}\n`);
-    console.log(`Added .flux/ to ${gitRoot ? gitignorePath : '.gitignore'}`);
+    return true;
   }
+  return false;
 }
 
-async function ensureKenzoWorkspace(): Promise<{ projectId?: string; projectName?: string }> {
+type KenzoWorkspace = {
+  fluxDir: string;
+  projectId?: string;
+  projectName?: string;
+  createdWorkspace: boolean;
+  createdProject: boolean;
+  gitignoreUpdated: boolean;
+};
+
+async function ensureKenzoWorkspace(): Promise<KenzoWorkspace> {
   const fluxDir = process.env.FLUX_DIR || resolve(process.cwd(), '.flux');
   const configPath = resolve(fluxDir, 'config.json');
   const jsonPath = resolve(fluxDir, 'data.json');
   const sqlitePath = resolve(fluxDir, 'data.sqlite');
+  let createdWorkspace = false;
+  let createdProject = false;
+  let gitignoreUpdated = false;
 
   if (!existsSync(fluxDir)) {
     mkdirSync(fluxDir, { recursive: true });
     writeConfig(fluxDir, {});
     writeFileSync(jsonPath, JSON.stringify({ projects: [], epics: [], tasks: [] }, null, 2));
-    ensureFluxIgnored();
-    console.log(`Created local Kenzo workspace at ${fluxDir}`);
+    gitignoreUpdated = ensureFluxIgnored();
+    createdWorkspace = true;
   } else if (!existsSync(configPath)) {
     writeConfig(fluxDir, {});
   }
@@ -117,7 +130,7 @@ async function ensureKenzoWorkspace(): Promise<{ projectId?: string; projectName
     const nextConfig = readConfigRaw(fluxDir);
     nextConfig.project = project.id;
     writeConfig(fluxDir, nextConfig);
-    console.log(`Created first project: ${project.name} (${project.id})`);
+    createdProject = true;
   } else if (!projectId || !projects.some(project => project.id === projectId)) {
     const project = projects[0];
     projectId = project.id;
@@ -125,33 +138,74 @@ async function ensureKenzoWorkspace(): Promise<{ projectId?: string; projectName
     const nextConfig = readConfigRaw(fluxDir);
     nextConfig.project = project.id;
     writeConfig(fluxDir, nextConfig);
-    console.log(`Using project: ${project.name} (${project.id})`);
   }
 
-  return { projectId, projectName };
+  return { fluxDir, projectId, projectName, createdWorkspace, createdProject, gitignoreUpdated };
 }
 
-function printMcpSetup(command = publicCommandName()): void {
-  const npxMcpCommand = 'npx -y --package kenzoboard kenzoboard-mcp';
+function codexCliCommand(): string {
+  const macAppCli = '/Applications/Codex.app/Contents/Resources/codex';
+  return process.platform === 'darwin' && existsSync(macAppCli) ? macAppCli : 'codex';
+}
+
+function quoteShell(value: string): string {
+  return `"${value.replace(/(["\\$`])/g, '\\$1')}"`;
+}
+
+function mcpPackageCommand(): string {
+  const localMcpPath = resolve(process.cwd(), 'packages/mcp/dist/index.js');
+  return existsSync(localMcpPath)
+    ? `bun ${quoteShell(localMcpPath)}`
+    : 'npx -y --package kenzoboard kenzoboard-mcp';
+}
+
+function codexMcpCommand(fluxDir: string): string {
+  return `${codexCliCommand()} mcp add flux --env FLUX_DIR=${quoteShell(fluxDir)} -- ${mcpPackageCommand()}`;
+}
+
+function claudeMcpCommand(fluxDir: string): string {
+  return `claude mcp add flux --env FLUX_DIR=${quoteShell(fluxDir)} -- ${mcpPackageCommand()}`;
+}
+
+function printLaunchSummary(workspace: KenzoWorkspace, command = publicCommandName()): void {
+  const projectLabel = workspace.projectName && workspace.projectId
+    ? `${workspace.projectName} (${workspace.projectId})`
+    : 'No project selected';
+
+  console.log(`${c.green}${c.bold}Kenzo is ready.${c.reset}`);
+  console.log(`Project: ${projectLabel}`);
+  if (workspace.createdWorkspace || workspace.createdProject || workspace.gitignoreUpdated) {
+    const details = [
+      workspace.createdWorkspace ? 'local workspace' : undefined,
+      workspace.createdProject ? 'first project' : undefined,
+      workspace.gitignoreUpdated ? '.flux/ in .gitignore' : undefined,
+    ].filter(Boolean).join(', ');
+    console.log(`${c.dim}Set up ${details}.${c.reset}`);
+  }
+
+  console.log('');
+  console.log(`${c.bold}Connect Codex:${c.reset}`);
+  console.log(`  ${codexMcpCommand(workspace.fluxDir)}`);
+  console.log('');
+  console.log(`${c.bold}Then ask Codex:${c.reset}`);
+  console.log('  Pick the next ready Kenzo task, implement it, and mark it done.');
+  console.log('');
+  console.log(`CLI fallback: ${c.cyan}${command} ready${c.reset}`);
+  console.log(`More setup:   ${c.cyan}${command} mcp${c.reset}`);
+}
+
+function printMcpSetup(command = publicCommandName(), fluxDir = findFluxDir()): void {
   const installedMcpCommand = 'kenzoboard-mcp';
   const dockerCommand = 'docker run -i --rm -v "$(pwd)/.flux:/app/packages/data" -e FLUX_DATA=/app/packages/data/flux.sqlite flux-mcp bun packages/mcp/dist/index.js';
-  const localMcpPath = resolve(process.cwd(), 'packages/mcp/dist/index.js');
 
-  console.log(`${c.bold}Agent setup${c.reset} ${c.dim}(MCP resources remain flux:// for compatibility)${c.reset}\n`);
+  console.log(`${c.bold}Agent setup${c.reset} ${c.dim}(MCP resources remain flux:// for compatibility)${c.reset}`);
+  console.log(`${c.dim}Using Kenzo workspace: ${fluxDir}${c.reset}\n`);
 
   console.log(`${c.bold}Codex:${c.reset}`);
-  if (existsSync(localMcpPath)) {
-    console.log(`  codex mcp add flux -- bun ${localMcpPath}`);
-  } else {
-    console.log(`  codex mcp add flux -- ${npxMcpCommand}`);
-  }
+  console.log(`  ${codexMcpCommand(fluxDir)}`);
 
   console.log(`${c.bold}Claude Code:${c.reset}`);
-  if (existsSync(localMcpPath)) {
-    console.log(`  claude mcp add flux -- bun ${localMcpPath}`);
-  } else {
-    console.log(`  claude mcp add flux -- ${npxMcpCommand}`);
-  }
+  console.log(`  ${claudeMcpCommand(fluxDir)}`);
 
   console.log('');
   console.log(`${c.bold}Global install:${c.reset}`);
@@ -160,21 +214,19 @@ function printMcpSetup(command = publicCommandName()): void {
   console.log(`${c.bold}Advanced Docker:${c.reset}`);
   console.log(`  ${dockerCommand}`);
   console.log('');
-  console.log(`Run ${c.cyan}${command} ready${c.reset} to see agent-ready work.`);
+  console.log(`${c.bold}Agent workflow:${c.reset}`);
+  console.log(`  1. Run ${c.cyan}${command} ready${c.reset} or ask the MCP server for ready tasks.`);
+  console.log('  2. Start one task, implement it, add notes as needed, then mark it done.');
+  console.log('  3. If MCP is not connected yet, Codex can still use the CLI commands from AGENTS.md.');
 }
 
 async function launchKenzoApp(): Promise<void> {
   const command = publicCommandName();
-  const { projectId, projectName } = await ensureKenzoWorkspace();
+  const workspace = await ensureKenzoWorkspace();
 
-  if (projectId && projectName) {
-    console.log(`Opening project: ${projectName} (${projectId})`);
-  }
-  console.log('');
-  console.log(`${c.bold}Next step after Kenzo opens:${c.reset}`);
-  printMcpSetup(command);
+  printLaunchSummary(workspace, command);
 
-  await serveCommand([], { port: String(defaultServePort()) }, { defaultPort: defaultServePort(), open: true });
+  await serveCommand([], { port: String(defaultServePort()) }, { defaultPort: defaultServePort(), open: true, compact: true });
 }
 
 // Flux instructions for AGENTS.md/CLAUDE.md

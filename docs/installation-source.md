@@ -71,10 +71,10 @@ For Claude Code:
 
 ```bash
 # Claude Code
-claude mcp add flux -- npx -y --package kenzoboard kenzoboard-mcp
+claude mcp add flux --env FLUX_DIR="$(pwd)/.flux" -- npx -y --package kenzoboard kenzoboard-mcp
 
 # Codex
-codex mcp add flux -- npx -y --package kenzoboard kenzoboard-mcp
+codex mcp add flux --env FLUX_DIR="$(pwd)/.flux" -- npx -y --package kenzoboard kenzoboard-mcp
 ```
 
 For ChatGPT setup and best practices, see `docs/assistant-setup.md`.

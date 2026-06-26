@@ -70,15 +70,17 @@ npx kenzoboard ready
 npx kenzoboard mcp
 ```
 
-`npx kenzoboard` creates or opens a local Kenzo workspace in `./.flux`, starts the bundled app, opens [http://localhost:3000](http://localhost:3000), and shows the MCP setup command as the next step. If port 3000 is busy, Kenzo prints the selected fallback port.
+`npx kenzoboard` creates or opens a local Kenzo workspace in `./.flux`, starts the bundled app, opens [http://localhost:3000](http://localhost:3000), and prints the one command Codex needs to read the same board. If port 3000 is busy, Kenzo prints the selected fallback port.
 
 ```bash
 # Claude Code
-claude mcp add flux -- npx -y --package kenzoboard kenzoboard-mcp
+claude mcp add flux --env FLUX_DIR="$(pwd)/.flux" -- npx -y --package kenzoboard kenzoboard-mcp
 
 # Codex
-codex mcp add flux -- npx -y --package kenzoboard kenzoboard-mcp
+codex mcp add flux --env FLUX_DIR="$(pwd)/.flux" -- npx -y --package kenzoboard kenzoboard-mcp
 ```
+
+MCP is the smooth path for agents because Codex can list projects, pick ready tasks, add notes, and mark work done without shelling out. Without MCP, an agent can still use the CLI (`kenzoboard ready`, `kenzoboard task start`, `kenzoboard task done`) as long as your `AGENTS.md` includes the workflow below.
 
 Let your agent know!
 
