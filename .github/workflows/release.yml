@@ -32,6 +32,8 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
+    env:
+      HAS_NPM_TOKEN: ${{ secrets.NPM_TOKEN != '' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -64,21 +66,23 @@ jobs:
         working-directory: packages/cli
 
       - name: Release (dry-run)
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && env.HAS_NPM_TOKEN == 'true'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Prefer npm trusted publishing (OIDC via id-token: write). NPM_TOKEN is
-          # a fallback for repos that have not enabled a trusted publisher yet.
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: true
         run: npx semantic-release --dry-run
 
       - name: Release
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' && env.HAS_NPM_TOKEN == 'true'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Prefer npm trusted publishing (OIDC via id-token: write). NPM_TOKEN is
-          # a fallback for repos that have not enabled a trusted publisher yet.
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: true
         run: npx semantic-release
+
+      - name: Skip npm release without token
+        if: env.HAS_NPM_TOKEN != 'true'
+        run: |
+          echo "::warning::NPM_TOKEN is not configured, so semantic-release publish was skipped. Builds and npm pack verification still ran."
+          echo "Set the NPM_TOKEN repository secret to enable automated npm releases."
