@@ -64,14 +64,16 @@ process.exit(1);
   return { bin, log, state };
 }
 
-function createFakeMcp(dir: string): { bin: string; log: string } {
+function createFakeMcp(dir: string, toolNames = ['list_ready_tasks']): { bin: string; log: string } {
   const mcpDir = join(dir, 'packages/mcp/dist');
   const bin = join(mcpDir, 'index.js');
   const log = join(dir, 'mcp-calls.jsonl');
   mkdirSync(mcpDir, { recursive: true });
+  const tools = toolNames.map(name => ({ name }));
 
   writeFileSync(bin, `#!/usr/bin/env node
 const fs = require('fs');
+const tools = ${JSON.stringify(tools)};
 let input = '';
 process.stdin.on('data', chunk => input += chunk);
 process.stdin.on('end', () => {
@@ -94,7 +96,7 @@ process.stdin.on('end', () => {
       console.log(JSON.stringify({
         jsonrpc: '2.0',
         id: message.id,
-        result: { tools: [{ name: 'list_ready_tasks' }] },
+        result: { tools },
       }));
     }
   }
@@ -149,6 +151,55 @@ describe('connect codex command', () => {
       expect(calls.map(call => call.args.slice(0, 3))).toContainEqual(['mcp', '--help']);
       expect(calls.some(call => call.args[0] === 'mcp' && call.args[1] === 'add')).toBe(true);
       expect(mcpCalls).toContainEqual({ fluxDir });
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('does not replace an existing Codex MCP server when tool verification fails', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'kenzo-connect-'));
+    const { bin, log, state } = createFakeCodex(dir);
+    const fakeMcp = createFakeMcp(dir, ['unexpected_tool']);
+    const existingConfig = {
+      name: 'kenzo-test',
+      env: 'FLUX_DIR=/existing',
+      command: 'existing-command',
+      commandArgs: ['--keep'],
+    };
+    writeFileSync(state, JSON.stringify(existingConfig, null, 2));
+
+    try {
+      let failed = false;
+      let stderr = '';
+      try {
+        execFileSync('bun', [cliPath, 'connect', 'codex', '--name', 'kenzo-test'], {
+          cwd: dir,
+          encoding: 'utf-8',
+          stdio: ['ignore', 'pipe', 'pipe'],
+          env: {
+            ...process.env,
+            CODEX_CLI_PATH: bin,
+            FAKE_CODEX_LOG: log,
+            FAKE_CODEX_STATE: state,
+            FAKE_MCP_LOG: fakeMcp.log,
+          },
+        });
+      } catch (e: any) {
+        failed = true;
+        stderr = e?.stderr?.toString() || '';
+      }
+
+      const configured = JSON.parse(readFileSync(state, 'utf-8'));
+      const calls = readFileSync(log, 'utf-8')
+        .trim()
+        .split('\n')
+        .map(line => JSON.parse(line) as { args: string[] });
+
+      expect(failed).toBe(true);
+      expect(stderr).toContain('Failed to configure Codex MCP');
+      expect(configured).toEqual(existingConfig);
+      expect(calls.some(call => call.args[0] === 'mcp' && call.args[1] === 'remove')).toBe(false);
+      expect(calls.some(call => call.args[0] === 'mcp' && call.args[1] === 'add')).toBe(false);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

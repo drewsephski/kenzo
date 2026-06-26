@@ -333,19 +333,20 @@ async function connectCodexCommand(flags: Record<string, string | boolean | stri
   ];
 
   try {
-    runCodex(cli, ['mcp', 'get', serverName]);
-    runCodex(cli, ['mcp', 'remove', serverName]);
-  } catch {
-    // Missing existing server is expected on first setup.
-  }
+    verifyMcpServer(packageArgs, workspace.fluxDir);
 
-  try {
+    try {
+      runCodex(cli, ['mcp', 'get', serverName]);
+      runCodex(cli, ['mcp', 'remove', serverName]);
+    } catch {
+      // Missing existing server is expected on first setup.
+    }
+
     runCodex(cli, addArgs);
     const result = runCodex(cli, ['mcp', 'get', serverName]);
     if (!result.includes(serverName) || !result.includes(packageArgs[0])) {
       throw new Error('Codex did not report the expected MCP server after setup.');
     }
-    verifyMcpServer(packageArgs, workspace.fluxDir);
 
     console.log(`${c.green}${c.bold}Codex is connected to Kenzo.${c.reset}`);
     console.log(`Server: ${serverName}`);
