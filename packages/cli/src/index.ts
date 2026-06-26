@@ -268,6 +268,45 @@ function runCodex(cli: string, args: string[]): string {
   });
 }
 
+function verifyMcpServer(args: string[], fluxDir: string): void {
+  const input = [
+    JSON.stringify({
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'initialize',
+      params: {
+        protocolVersion: '2024-11-05',
+        capabilities: {},
+        clientInfo: { name: 'kenzoboard-connect', version: '0.0.0' },
+      },
+    }),
+    JSON.stringify({ jsonrpc: '2.0', method: 'notifications/initialized', params: {} }),
+    JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'tools/list', params: {} }),
+  ].join('\n') + '\n';
+
+  const output = execFileSync(args[0], args.slice(1), {
+    input,
+    encoding: 'utf-8',
+    stdio: ['pipe', 'pipe', 'pipe'],
+    timeout: 30000,
+    env: {
+      ...process.env,
+      FLUX_DIR: fluxDir,
+    },
+  });
+
+  const responses = output
+    .split('\n')
+    .map(line => line.trim())
+    .filter(Boolean)
+    .map(line => JSON.parse(line) as { id?: number; result?: { tools?: Array<{ name?: string }> } });
+
+  const tools = responses.find(response => response.id === 2)?.result?.tools;
+  if (!tools?.some(tool => tool.name === 'list_ready_tasks')) {
+    throw new Error('MCP server started, but did not expose the expected Kenzo task tools.');
+  }
+}
+
 async function connectCodexCommand(flags: Record<string, string | boolean | string[]>): Promise<void> {
   const workspace = await ensureKenzoWorkspace();
   const cli = resolveCodexCli();
@@ -306,10 +345,12 @@ async function connectCodexCommand(flags: Record<string, string | boolean | stri
     if (!result.includes(serverName) || !result.includes(packageArgs[0])) {
       throw new Error('Codex did not report the expected MCP server after setup.');
     }
+    verifyMcpServer(packageArgs, workspace.fluxDir);
 
     console.log(`${c.green}${c.bold}Codex is connected to Kenzo.${c.reset}`);
     console.log(`Server: ${serverName}`);
     console.log(`Workspace: ${workspace.fluxDir}`);
+    console.log('MCP tools: verified');
     console.log('');
     console.log(`${c.bold}Try this in Codex:${c.reset}`);
     console.log('  Use Kenzo to pick the next ready task, implement it, and mark it done.');

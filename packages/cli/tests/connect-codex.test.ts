@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { chmodSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'fs';
+import { chmodSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join, resolve } from 'path';
 import { execFileSync } from 'child_process';
@@ -64,10 +64,52 @@ process.exit(1);
   return { bin, log, state };
 }
 
+function createFakeMcp(dir: string): { bin: string; log: string } {
+  const mcpDir = join(dir, 'packages/mcp/dist');
+  const bin = join(mcpDir, 'index.js');
+  const log = join(dir, 'mcp-calls.jsonl');
+  mkdirSync(mcpDir, { recursive: true });
+
+  writeFileSync(bin, `#!/usr/bin/env node
+const fs = require('fs');
+let input = '';
+process.stdin.on('data', chunk => input += chunk);
+process.stdin.on('end', () => {
+  fs.appendFileSync(process.env.FAKE_MCP_LOG, JSON.stringify({ fluxDir: process.env.FLUX_DIR }) + '\\n');
+  for (const line of input.trim().split('\\n')) {
+    if (!line) continue;
+    const message = JSON.parse(line);
+    if (message.method === 'initialize') {
+      console.log(JSON.stringify({
+        jsonrpc: '2.0',
+        id: message.id,
+        result: {
+          protocolVersion: '2024-11-05',
+          capabilities: { tools: {} },
+          serverInfo: { name: 'fake-kenzo', version: '0.0.0' },
+        },
+      }));
+    }
+    if (message.method === 'tools/list') {
+      console.log(JSON.stringify({
+        jsonrpc: '2.0',
+        id: message.id,
+        result: { tools: [{ name: 'list_ready_tasks' }] },
+      }));
+    }
+  }
+});
+`);
+  chmodSync(bin, 0o755);
+
+  return { bin, log };
+}
+
 describe('connect codex command', () => {
   it('configures Codex MCP with the current workspace FLUX_DIR', () => {
     const dir = mkdtempSync(join(tmpdir(), 'kenzo-connect-'));
     const { bin, log, state } = createFakeCodex(dir);
+    const fakeMcp = createFakeMcp(dir);
 
     try {
       const output = execFileSync('bun', [cliPath, 'connect', 'codex', '--name', 'kenzo-test'], {
@@ -78,6 +120,7 @@ describe('connect codex command', () => {
           CODEX_CLI_PATH: bin,
           FAKE_CODEX_LOG: log,
           FAKE_CODEX_STATE: state,
+          FAKE_MCP_LOG: fakeMcp.log,
         },
       });
 
@@ -91,14 +134,21 @@ describe('connect codex command', () => {
         .trim()
         .split('\n')
         .map(line => JSON.parse(line) as { args: string[] });
+      const mcpCalls = readFileSync(fakeMcp.log, 'utf-8')
+        .trim()
+        .split('\n')
+        .map(line => JSON.parse(line) as { fluxDir: string });
+      const fluxDir = join(realpathSync(dir), '.flux');
 
       expect(output).toContain('Codex is connected to Kenzo');
+      expect(output).toContain('MCP tools: verified');
       expect(configured.name).toBe('kenzo-test');
-      expect(configured.env).toBe(`FLUX_DIR=${join(realpathSync(dir), '.flux')}`);
-      expect(configured.command).toBe('npx');
-      expect(configured.commandArgs).toEqual(['-y', '--package', 'kenzoboard', 'kenzoboard-mcp']);
+      expect(configured.env).toBe(`FLUX_DIR=${fluxDir}`);
+      expect(configured.command).toBe('bun');
+      expect(configured.commandArgs).toEqual([realpathSync(fakeMcp.bin)]);
       expect(calls.map(call => call.args.slice(0, 3))).toContainEqual(['mcp', '--help']);
       expect(calls.some(call => call.args[0] === 'mcp' && call.args[1] === 'add')).toBe(true);
+      expect(mcpCalls).toContainEqual({ fluxDir });
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
