@@ -1,5 +1,6 @@
 {
   "branches": ["main"],
+  "repositoryUrl": "https://github.com/drewsephski/kenzo.git",
   "tagFormat": "v${version}",
   "plugins": [
     ["@semantic-release/commit-analyzer", {
